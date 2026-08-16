@@ -17,7 +17,7 @@ import { withBase } from '../lib/site';
         <div class="featured-art__link">
           <img
             class="featured-art__image"
-            src={`${import.meta.env.BASE_URL}images/featured-artwork.png`}
+            src={withBase('/images/featured-artwork.png')}
             alt="Featured artwork"
             decoding="async"
           />
