@@ -6,5 +6,5 @@ export const siteBase = import.meta.env.BASE_URL;
 
 export function withBase(path: string): string {
   if (/^(https?:|mailto:|tel:|#|data:|javascript:)/i.test(path)) return path;
-  return `${siteBase}${path.replace(/^\/+/, '')}`;
+  return `${siteBase.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`;
 }
