@@ -1,0 +1,23 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const rituals = await getCollection('rituals');
+  return rituals.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+<BaseLayout title={`${entry.data.title} · Rituals`} description={entry.data.description ?? entry.data.title}>
+  <div class="ritual-page">
+    <a class="back-link ritual-back" href="/writing/">← writing</a>
+    <header class="ritual-header">
+      <p class="mono">rituals / {entry.data.year ?? ''}</p>
+      <h1>{entry.data.title}</h1>
+      {entry.data.description && <p class="ritual-description">{entry.data.description}</p>}
+    </header>
+    <article class="ritual-content"><Content /></article>
+  </div>
+</BaseLayout>

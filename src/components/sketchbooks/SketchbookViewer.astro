@@ -1,0 +1,212 @@
+---
+interface SketchbookPage {
+  src: string;
+  alt: string;
+}
+
+interface SketchbookItem {
+  id: string;
+  title: string;
+  year?: number;
+  format: 'spread' | 'notepad';
+  pages: SketchbookPage[];
+}
+
+interface Props {
+  sketchbooks: SketchbookItem[];
+}
+
+const { sketchbooks } = Astro.props;
+const serialized = JSON.stringify(sketchbooks).replace(/</g, '\\u003c');
+---
+
+<div class="sketchbook-viewer" data-sketchbook-viewer data-books={serialized}>
+  <div class="sketchbook-viewer__backdrop" data-close></div>
+  <div class="sketchbook-viewer__dialog" role="dialog" aria-modal="true" aria-label="Sketchbook viewer" tabindex="-1">
+    <button class="sketchbook-viewer__close" type="button" data-close aria-label="Close sketchbook viewer">×</button>
+    <button class="sketchbook-viewer__nav sketchbook-viewer__nav--prev" type="button" data-prev aria-label="Previous page">←</button>
+    <button class="sketchbook-viewer__nav sketchbook-viewer__nav--next" type="button" data-next aria-label="Next page">→</button>
+
+    <div class="sketchbook-viewer__stage" data-stage>
+      <div class="sketchbook-viewer__book is-spread" data-book>
+        <div class="sketchbook-viewer__page sketchbook-viewer__page--left" data-page-a></div>
+        <div class="sketchbook-viewer__page sketchbook-viewer__page--right" data-page-b></div>
+      </div>
+    </div>
+
+    <div class="sketchbook-viewer__toolbar">
+      <div>
+        <div class="sketchbook-viewer__title" data-title></div>
+        <div class="sketchbook-viewer__format mono" data-format></div>
+      </div>
+      <div class="sketchbook-viewer__counter mono" data-counter>01 / 01</div>
+      <div class="sketchbook-viewer__hint mono">swipe · ← → · esc</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const root = document.querySelector('[data-sketchbook-viewer]');
+  if (root) {
+    const books = JSON.parse(root.getAttribute('data-books') || '[]');
+    const dialog = root.querySelector('.sketchbook-viewer__dialog');
+    const bookEl = root.querySelector('[data-book]');
+    const pageA = root.querySelector('[data-page-a]');
+    const pageB = root.querySelector('[data-page-b]');
+    const counter = root.querySelector('[data-counter]');
+    const titleEl = root.querySelector('[data-title]');
+    const formatEl = root.querySelector('[data-format]');
+    const prev = root.querySelector('[data-prev]');
+    const next = root.querySelector('[data-next]');
+    const stage = root.querySelector('[data-stage]');
+    const closeButtons = root.querySelectorAll('[data-close]');
+
+    let bookIndex = 0;
+    let currentPage = 0;
+    let lastFocused = null;
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let pointerActive = false;
+    let flipDirection = 1;
+    let flipTimer;
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const activeBook = () => books[bookIndex];
+
+    const pageNode = (page) => {
+      if (!page) return null;
+      const img = document.createElement('img');
+      img.src = page.src;
+      img.alt = page.alt || '';
+      img.loading = 'eager';
+      img.draggable = false;
+      img.className = 'sketchbook-viewer__image';
+      return img;
+    };
+
+    const setBookPresentation = () => {
+      const current = activeBook();
+      const isSpread = current?.format === 'spread';
+      bookEl.classList.toggle('is-spread', isSpread);
+      bookEl.classList.toggle('is-notepad', !isSpread);
+      titleEl.textContent = current?.title || '';
+      formatEl.textContent = current ? `${isSpread ? 'moleskine / spread' : 'notepad / upward flip'}${current.year ? ` · ${current.year}` : ''}` : '';
+    };
+
+    const updatePages = (animate = false) => {
+      const current = activeBook();
+      if (!current) return;
+      const isSpread = current.format === 'spread';
+      const pages = current.pages || [];
+
+      setBookPresentation();
+      pageA.replaceChildren();
+      pageB.replaceChildren();
+
+      if (isSpread) {
+        currentPage = Math.max(0, Math.min(currentPage - (currentPage % 2), Math.max(0, pages.length - 1)));
+        const left = pages[currentPage];
+        const right = pages[currentPage + 1];
+        const leftImage = pageNode(left);
+        const rightImage = pageNode(right);
+        if (leftImage) pageA.appendChild(leftImage);
+        if (rightImage) pageB.appendChild(rightImage);
+        counter.textContent = `${pad(Math.min(currentPage + 1, pages.length))} / ${pad(pages.length)}`;
+        prev.disabled = currentPage <= 0;
+        next.disabled = currentPage >= Math.max(0, pages.length - 2);
+      } else {
+        currentPage = Math.max(0, Math.min(currentPage, Math.max(0, pages.length - 1)));
+        const image = pageNode(pages[currentPage]);
+        if (image) pageA.appendChild(image);
+        counter.textContent = `${pad(currentPage + 1)} / ${pad(pages.length)}`;
+        prev.disabled = currentPage <= 0;
+        next.disabled = currentPage >= pages.length - 1;
+      }
+
+      if (animate) {
+        clearTimeout(flipTimer);
+        bookEl.classList.remove('is-turning-left', 'is-turning-right', 'is-lifting');
+        void bookEl.offsetWidth;
+        bookEl.classList.add(isSpread ? (flipDirection > 0 ? 'is-turning-right' : 'is-turning-left') : 'is-lifting');
+        flipTimer = window.setTimeout(() => bookEl.classList.remove('is-turning-left', 'is-turning-right', 'is-lifting'), 560);
+      }
+    };
+
+    const open = (index) => {
+      const selected = Number.isFinite(index) ? index : 0;
+      bookIndex = Math.max(0, Math.min(selected, books.length - 1));
+      currentPage = 0;
+      updatePages(false);
+      lastFocused = document.activeElement;
+      root.classList.add('is-open');
+      document.documentElement.classList.add('viewer-open');
+      dialog.focus();
+    };
+
+    const close = () => {
+      root.classList.remove('is-open');
+      document.documentElement.classList.remove('viewer-open');
+      lastFocused?.focus?.();
+    };
+
+    const change = (direction) => {
+      const current = activeBook();
+      if (!current || current.pages.length < 2) return;
+      flipDirection = direction;
+      if (current.format === 'spread') {
+        const target = currentPage + direction * 2;
+        if (target < 0 || target >= current.pages.length) return;
+        currentPage = target;
+      } else {
+        const target = currentPage + direction;
+        if (target < 0 || target >= current.pages.length) return;
+        currentPage = target;
+      }
+      updatePages(true);
+    };
+
+    document.addEventListener('click', (event) => {
+      const trigger = event.target instanceof Element ? event.target.closest('[data-sketchbook-open]') : null;
+      if (!trigger) return;
+      event.preventDefault();
+      const id = trigger.getAttribute('data-sketchbook-open');
+      const index = books.findIndex((item) => item.id === id);
+      open(index >= 0 ? index : 0);
+    });
+
+    closeButtons.forEach((button) => button.addEventListener('click', close));
+    prev.addEventListener('click', () => change(-1));
+    next.addEventListener('click', () => change(1));
+
+    dialog.addEventListener('keydown', (event) => {
+      if (!root.classList.contains('is-open')) return;
+      if (event.key === 'Escape') close();
+      if (event.key === 'ArrowLeft') change(-1);
+      if (event.key === 'ArrowRight') change(1);
+    });
+
+    stage.addEventListener('pointerdown', (event) => {
+      pointerStartX = event.clientX;
+      pointerStartY = event.clientY;
+      pointerActive = true;
+      stage.setPointerCapture?.(event.pointerId);
+    });
+
+    stage.addEventListener('pointerup', (event) => {
+      if (!pointerActive) return;
+      pointerActive = false;
+      const dx = event.clientX - pointerStartX;
+      const dy = event.clientY - pointerStartY;
+      const current = activeBook();
+      if (!current) return;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+        change(dx < 0 ? 1 : -1);
+      } else if (current.format === 'notepad' && Math.abs(dy) > 70 && Math.abs(dy) > Math.abs(dx)) {
+        change(dy < 0 ? 1 : -1);
+      }
+    });
+
+    stage.addEventListener('pointercancel', () => { pointerActive = false; });
+    updatePages(false);
+  }
+</script>

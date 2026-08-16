@@ -1,0 +1,39 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const entries = (await getCollection('projects')).sort((a, b) => {
+  const ad = a.data.date?.getTime() ?? 0;
+  const bd = b.data.date?.getTime() ?? 0;
+  return bd - ad;
+});
+
+const groups = [...new Set(entries.map((entry) => entry.data.year ?? entry.data.date?.getFullYear()).filter(Boolean))] as number[];
+---
+
+<BaseLayout title="Projects · Artist Archive">
+  <div class="archive-page projects-page">
+    <header class="archive-header">
+      <div>
+        <p class="mono">archive</p>
+        <h1>projects</h1>
+      </div>
+      <p class="archive-intro">work in progress, experiments, logs, fragments, and things worth keeping.</p>
+    </header>
+
+    {groups.map((year) => (
+      <section class="archive-year" aria-labelledby={`year-${year}`}>
+        <h2 id={`year-${year}`} class="archive-year__title">{year}</h2>
+        <div class="project-list">
+          {entries.filter((entry) => (entry.data.year ?? entry.data.date?.getFullYear()) === year).map((entry, index) => (
+            <a class="project-row" href={`/projects/${entry.id}/`}>
+              <span class="project-row__index">{String(index + 1).padStart(2, '0')}</span>
+              <span class="project-row__title">{entry.data.title}</span>
+              <span class="project-row__type">{entry.data.type}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+</BaseLayout>

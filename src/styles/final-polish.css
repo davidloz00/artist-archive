@@ -1,0 +1,173 @@
+/* Final responsive + interaction polish */
+
+:focus-visible {
+  outline: 1px solid var(--forest);
+  outline-offset: 4px;
+}
+
+.site-home-link {
+  position: fixed;
+  top: clamp(1rem, 3vw, 2rem);
+  left: clamp(1rem, 3vw, 2rem);
+  z-index: 40;
+  color: var(--warm-gray);
+  transition: color 180ms ease, transform 180ms ease;
+}
+.site-home-link:hover,
+.site-home-link:focus-visible {
+  color: var(--forest);
+  transform: translateX(.2rem);
+  outline: none;
+}
+
+input,
+button,
+a {
+  font: inherit;
+}
+
+button,
+.search-field input,
+.filter-chip,
+.dump-arrow,
+.artwork-viewer__close,
+.artwork-viewer__control,
+.sketchbook-viewer__close,
+.sketchbook-viewer__nav {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.search-field input {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: .75rem 0 .8rem;
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+}
+.search-field input::placeholder { color: var(--warm-gray); opacity: .9; }
+.search-field input:focus { border-bottom-color: var(--forest); }
+
+.filter-chip {
+  padding: .55rem .75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--warm-gray);
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+.filter-chip:hover,
+.filter-chip:focus-visible,
+.filter-chip.is-active {
+  color: var(--forest);
+  border-color: rgba(45,64,51,.38);
+  background: rgba(45,64,51,.05);
+  outline: none;
+}
+.filter-chip:hover { transform: translateY(-1px); }
+
+.artwork-viewer__control,
+.sketchbook-viewer__nav,
+.artwork-viewer__close,
+.sketchbook-viewer__close {
+  display: grid;
+  place-items: center;
+}
+
+@media (max-width: 760px) {
+  .site-home-link { position: absolute; }
+  .archive-page,
+  .single-artwork-page,
+  .films-page,
+  .film-page,
+  .writing-page,
+  .about-page,
+  .playlists-page,
+  .playlist-page,
+  .sketchbook-archive { padding-top: 4.5rem; }
+
+  .archive-header,
+  .films-header,
+  .writing-header,
+  .about-hero,
+  .playlist-page__header,
+  .playlists-header { margin-bottom: 3.25rem; }
+
+  .artwork-grid { grid-template-columns: 1fr; gap: 3.2rem; }
+  .artwork-card,
+  .artwork-card:nth-child(5n + 2),
+  .artwork-card:nth-child(5n + 4),
+  .artwork-card:nth-child(5n + 5),
+  .artwork-card--featured {
+    grid-column: auto;
+    margin-top: 0;
+  }
+
+  .artwork-card__caption { font-size: .78rem; }
+
+  .artwork-viewer__dialog { padding-left: .5rem; padding-right: .5rem; }
+  .artwork-viewer__stage {
+    inset: 4.6rem .35rem 5.8rem;
+    touch-action: none;
+  }
+  .artwork-viewer__image { max-width: 94vw; max-height: 74vh; }
+  .artwork-viewer__control { top: auto; bottom: 4.75rem; }
+  .artwork-viewer__control--prev { left: .35rem; }
+  .artwork-viewer__control--next { right: .35rem; }
+  .artwork-viewer__toolbar {
+    left: .75rem;
+    right: .75rem;
+    grid-template-columns: auto 1fr;
+    gap: .8rem;
+    bottom: .6rem;
+  }
+  .artwork-viewer__counter { justify-self: end; }
+  .artwork-viewer__meta { grid-column: 1 / -1; justify-self: start; text-align: left; }
+
+  .sketchbook-viewer__toolbar { padding-bottom: .65rem; }
+  .sketchbook-viewer__stage { padding-left: .5rem; padding-right: .5rem; }
+
+  .dump-stage { min-height: 52vh; }
+  .dump-slide img, .dump-slide video { max-height: 52vh; }
+
+  .film-entry { grid-template-columns: 1fr; gap: .9rem; }
+  .film-entry__meta { flex-direction: row; }
+  .film-entry__copy { display: grid; gap: .7rem; }
+  .film-page__context { margin-left: 0; }
+
+  .writing-section,
+  .about-grid,
+  .about-section,
+  .playlist-page__grid { grid-template-columns: 1fr; }
+  .writing-section,
+  .about-section { gap: 1.25rem; }
+  .playlist-page__player { order: 1; }
+  .playlist-page__writing { order: 2; }
+}
+
+@media (max-width: 520px) {
+  .home-grid { padding-top: 4rem; }
+  .site-name { font-size: clamp(2.7rem, 14vw, 4.4rem); }
+  .featured-art { min-height: 0; }
+  .featured-art__image { max-height: 62vh; }
+  .archive-header h1,
+  .films-header h1,
+  .writing-header h1,
+  .about-hero h1 { font-size: clamp(3.6rem, 18vw, 6rem); }
+  .playlist-row { grid-template-columns: 2.5rem minmax(0,1fr); }
+  .playlist-row__arrow { display: none; }
+  .playlist-row__listen { display: none; }
+  .playlist-filter-row { padding-bottom: .35rem; overflow-x: auto; scrollbar-width: none; }
+  .playlist-filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip { flex: 0 0 auto; }
+  .about-colophon { gap: .55rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-home-link,
+  .filter-chip { transition: none; }
+}

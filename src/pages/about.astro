@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const elsewhere = [
+  ['apple music', '#'],
+  ['instagram', '#'],
+  ['spotify', '#'],
+  ['substack', '#'],
+  ['tiktok', '#'],
+  ['youtube', '#'],
+];
+---
+<BaseLayout title="About · Artist Archive" description="About the artist behind this living creative archive.">
+  <main class="about-page">
+    <a class="back-link" href="/">← home</a>
+
+    <header class="about-hero">
+      <span class="mono">about</span>
+      <h1>about</h1>
+    </header>
+
+    <section class="about-grid" aria-labelledby="about-name">
+      <div>
+        <div class="about-photo" role="img" aria-label="Optional artist or studio photograph placeholder">
+          <span class="mono">portrait / studio photograph</span>
+        </div>
+      </div>
+
+      <div class="about-copy">
+        <p class="about-name" id="about-name">your name</p>
+        <p class="about-role">artist / writer / collector of songs</p>
+
+        <div class="about-body">
+          <p>This space is intentionally left close to the artist’s own voice. Replace this text with a few paragraphs about who you are, what you make, what you notice, and why this archive exists.</p>
+          <p>The writing can be personal rather than formal. It does not need to read like a résumé or a traditional artist statement.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section" aria-labelledby="elsewhere-title">
+      <div>
+        <span class="mono">elsewhere</span>
+      </div>
+      <nav aria-labelledby="elsewhere-title">
+        <h2 class="sr-only" id="elsewhere-title">Elsewhere</h2>
+        <div class="elsewhere-list">
+          {elsewhere.map(([label, href]) => (
+            <a class="elsewhere-link" href={href} target={href === '#' ? undefined : '_blank'} rel={href === '#' ? undefined : 'noreferrer'}>
+              <span>{label}</span><span aria-hidden="true">↗</span>
+            </a>
+          ))}
+        </div>
+      </nav>
+    </section>
+
+    <section class="about-section" aria-labelledby="contact-title">
+      <div>
+        <span class="mono">contact</span>
+      </div>
+      <div>
+        <h2 class="sr-only" id="contact-title">Contact</h2>
+        <a class="contact-link" href="mailto:hello@example.com">hello@example.com</a>
+      </div>
+    </section>
+
+    <footer class="about-colophon">
+      <span>set in Cormorant Garamond, Inter &amp; IBM Plex Mono.</span>
+      <span>built slowly.</span>
+    </footer>
+  </main>
+</BaseLayout>

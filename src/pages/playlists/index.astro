@@ -1,0 +1,133 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const playlists = await getCollection('playlists');
+const sorted = playlists.slice().sort((a, b) => {
+  const yearDiff = (b.data.year ?? 0) - (a.data.year ?? 0);
+  if (yearDiff !== 0) return yearDiff;
+  return (b.data.number ?? 0) - (a.data.number ?? 0);
+});
+const years = [...new Set(sorted.map((item) => item.data.year).filter(Boolean))] as number[];
+const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) => a.localeCompare(b));
+---
+
+<BaseLayout title="Playlists · Artist Archive" description="An Apple Music-first archive of playlists, liner notes, and stories.">
+  <div class="playlists-page">
+    <header class="playlists-header">
+      <div>
+        <span class="mono">music archive / {sorted.length}</span>
+        <h1>playlists</h1>
+        <p class="playlists-intro">An evolving collection of songs, situations, seasons, and memories.</p>
+      </div>
+      <button id="surprise-me" class="archive-button" type="button">surprise me <span aria-hidden="true">↗</span></button>
+    </header>
+
+    <section class="playlists-tools" aria-label="Playlist search and filters">
+      <label class="search-field">
+        <span class="sr-only">Search playlists</span>
+        <input id="playlist-search" type="search" placeholder="search playlists..." autocomplete="off" />
+      </label>
+      <div class="playlist-filter-row" role="list" aria-label="Playlist tags">
+        <button class="filter-chip is-active" type="button" data-tag="all">all</button>
+        {tags.map((tag) => <button class="filter-chip" type="button" data-tag={tag}>{tag}</button>)}
+      </div>
+    </section>
+
+    <div id="playlist-empty" class="playlist-empty" hidden>
+      Nothing here yet. Try another word or mood.
+    </div>
+
+    <div class="playlist-archive" id="playlist-archive">
+      {years.map((year) => {
+        const yearItems = sorted.filter((item) => item.data.year === year);
+        return (
+          <section class="playlist-year" data-year={year}>
+            <h2>{year}</h2>
+            <div class="playlist-list">
+              {yearItems.map((item) => {
+                const number = item.data.number ? String(item.data.number).padStart(3, '0') : '—';
+                const searchable = [item.data.title, item.data.whenToListen, item.data.tags.join(' ')].join(' ').toLowerCase();
+                return (
+                  <a
+                    class="playlist-row"
+                    href={`/playlists/${item.id}/`}
+                    data-tags={item.data.tags.join('|')}
+                    data-search={searchable}
+                    data-url={`/playlists/${item.id}/`}
+                  >
+                    <span class="mono playlist-row__number">{number}</span>
+                    <span class="playlist-row__title-wrap">
+                      <strong>{item.data.title}</strong>
+                      <span class="playlist-row__listen">{item.data.whenToListen}</span>
+                    </span>
+                    <span class="playlist-row__arrow" aria-hidden="true">↗</span>
+                  </a>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  </div>
+
+  <script>
+    const search = document.querySelector('#playlist-search');
+    const rows = [...document.querySelectorAll('.playlist-row')];
+    const yearSections = [...document.querySelectorAll('.playlist-year')];
+    const empty = document.querySelector('#playlist-empty');
+    const chips = [...document.querySelectorAll('.filter-chip')];
+    const surprise = document.querySelector('#surprise-me');
+
+    let activeTag = 'all';
+
+    const applyFilters = () => {
+      const query = (search?.value || '').trim().toLowerCase();
+      let visible = 0;
+
+      rows.forEach((row) => {
+        const haystack = row.dataset.search || '';
+        const tags = (row.dataset.tags || '').split('|').filter(Boolean);
+        const matchesSearch = !query || haystack.includes(query);
+        const matchesTag = activeTag === 'all' || tags.includes(activeTag);
+        const show = matchesSearch && matchesTag;
+        row.hidden = !show;
+        if (show) visible += 1;
+      });
+
+      yearSections.forEach((section) => {
+        const anyVisible = [...section.querySelectorAll('.playlist-row')].some((row) => !row.hidden);
+        section.hidden = !anyVisible;
+      });
+
+      if (empty) empty.hidden = visible !== 0;
+    };
+
+    search?.addEventListener('input', applyFilters);
+    chips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        activeTag = chip.dataset.tag || 'all';
+        chips.forEach((item) => item.classList.toggle('is-active', item === chip));
+        applyFilters();
+      });
+    });
+
+    surprise?.addEventListener('click', () => {
+      const visibleRows = rows.filter((row) => !row.hidden);
+      const pool = visibleRows.length ? visibleRows : rows;
+      const target = pool[Math.floor(Math.random() * pool.length)];
+      const url = target?.dataset.url;
+      if (url) window.location.href = url;
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    const initialTag = params.get('tag');
+    if (initialTag && chips.some((chip) => chip.dataset.tag === initialTag)) {
+      const chip = chips.find((item) => item.dataset.tag === initialTag);
+      if (chip) chip.click();
+    }
+
+    applyFilters();
+  </script>
+</BaseLayout>

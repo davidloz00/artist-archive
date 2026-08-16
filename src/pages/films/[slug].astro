@@ -1,0 +1,48 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FilmEmbed from '../../components/films/FilmEmbed.astro';
+import '../../styles/films.css';
+
+export async function getStaticPaths() {
+  const films = await getCollection('films');
+  return films.map((film) => ({ params: { slug: film.id }, props: { film } }));
+}
+
+const { film } = Astro.props;
+const { Content } = await render(film);
+const films = (await getCollection('films')).slice().sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0));
+const index = films.findIndex((item) => item.id === film.id);
+const previous = films[index - 1];
+const next = films[index + 1];
+const data = film.data;
+---
+
+<BaseLayout title={`${data.title} · Films · Artist Archive`} description={data.description ?? `Film by ${data.title}.`}>
+  <div class="film-page">
+    <a class="back-link mono" href="/films/">← films</a>
+
+    <header class="film-page__header">
+      <span class="mono">film / {data.year ?? '—'}</span>
+      <h1>{data.title}</h1>
+      {data.duration && <span class="mono">{data.duration}</span>}
+    </header>
+
+    <section class="film-page__player" aria-label={data.title}>
+      <FilmEmbed youtubeUrl={data.youtubeUrl} title={data.title} />
+    </section>
+
+    {(data.description || film.body) && (
+      <section class="film-page__context">
+        {data.description && <p class="film-page__description">{data.description}</p>}
+        {film.body && <div class="prose"><Content /></div>}
+      </section>
+    )}
+
+    <nav class="film-page__nav" aria-label="Film navigation">
+      {previous ? <a href={`/films/${previous.id}/`}>← {previous.data.title}</a> : <span></span>}
+      <a href="/films/">archive</a>
+      {next ? <a href={`/films/${next.id}/`}>{next.data.title} →</a> : <span></span>}
+    </nav>
+  </div>
+</BaseLayout>

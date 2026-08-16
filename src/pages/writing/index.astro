@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const [notes, rituals, essays] = await Promise.all([
+  getCollection('notes'),
+  getCollection('rituals'),
+  getCollection('blog')
+]);
+
+const sortedNotes = [...notes].sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
+const sortedRituals = [...rituals].sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0));
+const essay = essays[0];
+---
+<BaseLayout title="Writing · Artist Archive" description="Essays, Notes App, and Rituals.">
+  <div class="writing-page">
+    <header class="writing-header">
+      <p class="mono">writing</p>
+      <h1>writing</h1>
+    </header>
+
+    <section class="writing-section writing-section--essays" aria-labelledby="essays-title">
+      <div>
+        <p class="mono">01</p>
+        <h2 id="essays-title">essays</h2>
+        <p class="writing-kicker">longer thoughts, criticism &amp; reflection</p>
+      </div>
+      <div class="writing-card">
+        <p>{essay?.data.description ?? 'Longer essays live on Substack.'}</p>
+        <a class="text-link" href={essay?.data.substackUrl ?? 'https://substack.com/'} target="_blank" rel="noreferrer">read on Substack ↗</a>
+      </div>
+    </section>
+
+    <section class="writing-section" aria-labelledby="notes-title">
+      <div>
+        <p class="mono">02</p>
+        <h2 id="notes-title">notes app</h2>
+        <p class="writing-kicker">fragments, quotes, observations, things worth remembering</p>
+      </div>
+      <div class="writing-list">
+        {sortedNotes.map((note, index) => (
+          <a class="writing-list__row" href={`/writing/notes/${note.id}/`}>
+            <span>{String( sortedNotes.length - index ).padStart(2, '0')}</span>
+            <strong>{note.data.title}</strong>
+            <small>{note.data.date ? note.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</small>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="writing-section" aria-labelledby="rituals-title">
+      <div>
+        <p class="mono">03</p>
+        <h2 id="rituals-title">rituals</h2>
+        <p class="writing-kicker">fiction, stories &amp; invented things</p>
+      </div>
+      <div class="writing-list">
+        {sortedRituals.map((ritual, index) => (
+          <a class="writing-list__row" href={`/writing/rituals/${ritual.id}/`}>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <strong>{ritual.data.title}</strong>
+            <small>{ritual.data.year ?? ''}</small>
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>

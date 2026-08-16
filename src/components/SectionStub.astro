@@ -1,0 +1,16 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  message: string;
+}
+const { eyebrow, title, message } = Astro.props;
+---
+<section class="stub-page">
+  <div class="stub-page__inner">
+    <p class="mono">{eyebrow}</p>
+    <h1>{title}</h1>
+    <p class="stub-page__message">{message}</p>
+    <a class="back-link mono" href="/">← home</a>
+  </div>
+</section>

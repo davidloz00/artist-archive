@@ -1,0 +1,63 @@
+---
+interface Props {
+  youtubeUrl: string;
+  title: string;
+  poster?: string;
+}
+
+const { youtubeUrl, title, poster } = Astro.props;
+
+function getYoutubeId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'youtu.be') return parsed.pathname.slice(1) || null;
+    if (parsed.hostname.includes('youtube.com')) {
+      if (parsed.pathname === '/watch') return parsed.searchParams.get('v');
+      if (parsed.pathname.startsWith('/shorts/')) return parsed.pathname.split('/')[2] || null;
+      if (parsed.pathname.startsWith('/embed/')) return parsed.pathname.split('/')[2] || null;
+    }
+  } catch {}
+  return null;
+}
+
+const videoId = getYoutubeId(youtubeUrl);
+const fallbackPoster = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : undefined;
+const image = poster || fallbackPoster;
+---
+
+<div class="film-player" data-video-id={videoId ?? ''}>
+  <div class="film-player__stage">
+    {image ? (
+      <button class="film-player__poster" type="button" aria-label={`Play ${title}`}>
+        <img src={image} alt={`Poster frame for ${title}`} loading="lazy" />
+        <span class="film-player__play" aria-hidden="true">▶</span>
+      </button>
+    ) : (
+      <button class="film-player__fallback" type="button">play film</button>
+    )}
+  </div>
+  <p class="mono film-player__provider">youtube</p>
+</div>
+
+<script>
+  document.querySelectorAll('.film-player').forEach((player) => {
+    const stage = player.querySelector('.film-player__stage');
+    const videoId = player.dataset.videoId;
+    const poster = player.querySelector('.film-player__poster');
+    if (!stage || !videoId || !poster) return;
+
+    const load = () => {
+      if (stage.querySelector('iframe')) return;
+      const iframe = document.createElement('iframe');
+      iframe.className = 'film-player__iframe';
+      iframe.title = poster.getAttribute('aria-label') || 'YouTube film player';
+      iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?rel=0&modestbranding=1&playsinline=1`;
+      iframe.loading = 'lazy';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+      iframe.allowFullscreen = true;
+      stage.replaceChildren(iframe);
+    };
+
+    poster.addEventListener('click', load);
+  });
+</script>

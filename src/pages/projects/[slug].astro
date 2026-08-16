@@ -1,0 +1,35 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import DumpCarousel from '../../components/projects/DumpCarousel.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('projects');
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const media = entry.data.media;
+const isDump = entry.data.type === 'dump' || media.length > 0;
+---
+
+<BaseLayout title={`${entry.data.title} · Projects`} description={entry.data.description ?? undefined}>
+  <div class="project-detail">
+    <header class="project-detail__header">
+      <a class="mono back-link" href="/projects/">← projects</a>
+      <p class="mono">{entry.data.type}</p>
+      <h1>{entry.data.title}</h1>
+      <div class="project-detail__meta">
+        {entry.data.year && <span>{entry.data.year}</span>}
+        {entry.data.tags.length > 0 && <span>{entry.data.tags.join(' · ')}</span>}
+      </div>
+    </header>
+
+    {isDump && <DumpCarousel media={media} title={entry.data.title} />}
+
+    <article class="project-story prose">
+      <Content />
+    </article>
+  </div>
+</BaseLayout>

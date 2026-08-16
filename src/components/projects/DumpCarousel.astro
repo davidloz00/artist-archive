@@ -1,0 +1,78 @@
+---
+interface MediaItem {
+  type: 'image' | 'video' | 'note';
+  src: string;
+  alt?: string;
+  caption?: string;
+}
+
+interface Props {
+  media: MediaItem[];
+  title?: string;
+}
+
+const { media, title = 'Archive carousel' } = Astro.props;
+const items = media.filter((item) => item?.src || item?.type === 'note');
+---
+
+<section class="dump-viewer" aria-label={title} data-dump-viewer>
+  <div class="dump-stage">
+    {items.map((item, index) => (
+      <figure class:list={['dump-slide', index === 0 && 'is-active']} data-slide={index}>
+        {item.type === 'image' && <img src={item.src} alt={item.alt ?? ''} loading={index === 0 ? 'eager' : 'lazy'} />}
+        {item.type === 'video' && (
+          <video controls playsinline preload={index === 0 ? 'metadata' : 'none'} poster={item.alt ? undefined : undefined}>
+            <source src={item.src} />
+          </video>
+        )}
+        {item.type === 'note' && <figcaption class="dump-note">{item.alt ?? item.src}</figcaption>}
+        {item.caption && <figcaption class="dump-caption">{item.caption}</figcaption>}
+      </figure>
+    ))}
+  </div>
+
+  <div class="dump-controls">
+    <button class="dump-arrow" type="button" data-prev aria-label="Previous item">←</button>
+    <span class="dump-counter" aria-live="polite"><span data-current>01</span> / {String(items.length).padStart(2, '0')}</span>
+    <button class="dump-arrow" type="button" data-next aria-label="Next item">→</button>
+  </div>
+</section>
+
+<script is:inline>
+(() => {
+  const root = document.querySelector('[data-dump-viewer]');
+  if (!root) return;
+  const slides = [...root.querySelectorAll('[data-slide]')];
+  const current = root.querySelector('[data-current]');
+  const prev = root.querySelector('[data-prev]');
+  const next = root.querySelector('[data-next]');
+  let index = 0;
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  const show = (nextIndex, direction = 1) => {
+    if (!slides.length) return;
+    const normalized = (nextIndex + slides.length) % slides.length;
+    slides.forEach((slide, i) => {
+      slide.classList.toggle('is-active', i === normalized);
+      slide.dataset.direction = i === normalized ? String(direction) : '';
+    });
+    index = normalized;
+    if (current) current.textContent = String(index + 1).padStart(2, '0');
+  };
+
+  prev?.addEventListener('click', () => show(index - 1, -1));
+  next?.addEventListener('click', () => show(index + 1, 1));
+  root.addEventListener('touchstart', (event) => { touchStartX = event.changedTouches[0]?.screenX ?? 0; }, { passive: true });
+  root.addEventListener('touchend', (event) => {
+    touchEndX = event.changedTouches[0]?.screenX ?? 0;
+    const delta = touchEndX - touchStartX;
+    if (Math.abs(delta) > 45) show(index + (delta < 0 ? 1 : -1), delta < 0 ? 1 : -1);
+  }, { passive: true });
+  window.addEventListener('keydown', (event) => {
+    if (!root.closest('body')) return;
+    if (event.key === 'ArrowLeft') show(index - 1, -1);
+    if (event.key === 'ArrowRight') show(index + 1, 1);
+  });
+})();
+</script>

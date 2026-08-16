@@ -1,0 +1,265 @@
+---
+interface ArtworkItem {
+  title: string;
+  year?: number;
+  medium?: string;
+  dimensions?: string;
+  image: string;
+  alt: string;
+  href: string;
+}
+
+interface Props {
+  artworks: ArtworkItem[];
+}
+
+const { artworks } = Astro.props;
+const serialized = JSON.stringify(artworks).replace(/</g, '\\u003c');
+---
+
+<div class="artwork-viewer" data-artwork-viewer data-items={serialized}>
+  <button class="artwork-viewer__backdrop" type="button" aria-label="Close artwork viewer"></button>
+
+  <div class="artwork-viewer__dialog" role="dialog" aria-modal="true" aria-label="Artwork viewer" tabindex="-1">
+    <button class="artwork-viewer__close" type="button" aria-label="Close artwork viewer">×</button>
+
+    <button class="artwork-viewer__control artwork-viewer__control--prev" type="button" aria-label="Previous artwork">←</button>
+    <button class="artwork-viewer__control artwork-viewer__control--next" type="button" aria-label="Next artwork">→</button>
+
+    <div class="artwork-viewer__stage" data-stage>
+      <div class="artwork-viewer__canvas" data-canvas>
+        <img class="artwork-viewer__image" data-image alt="" draggable="false" />
+      </div>
+    </div>
+
+    <div class="artwork-viewer__toolbar">
+      <div class="artwork-viewer__zoom" aria-label="Zoom controls">
+        <button type="button" data-zoom-out aria-label="Zoom out">−</button>
+        <span data-zoom-level>100%</span>
+        <button type="button" data-zoom-in aria-label="Zoom in">+</button>
+      </div>
+      <div class="artwork-viewer__counter" data-counter>01 / 01</div>
+      <div class="artwork-viewer__meta">
+        <span class="artwork-viewer__title" data-title></span>
+        <span class="artwork-viewer__details" data-details></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const root = document.querySelector('[data-artwork-viewer]');
+  if (root) {
+    const items = JSON.parse(root.getAttribute('data-items') || '[]');
+    const dialog = root.querySelector('.artwork-viewer__dialog');
+    const stage = root.querySelector('[data-stage]');
+    const canvas = root.querySelector('[data-canvas]');
+    const image = root.querySelector('[data-image]');
+    const counter = root.querySelector('[data-counter]');
+    const title = root.querySelector('[data-title]');
+    const details = root.querySelector('[data-details]');
+    const zoomLevel = root.querySelector('[data-zoom-level]');
+    const closeButton = root.querySelector('.artwork-viewer__close');
+    const previousButton = root.querySelector('[aria-label="Previous artwork"]');
+    const nextButton = root.querySelector('[aria-label="Next artwork"]');
+    const backdrop = root.querySelector('.artwork-viewer__backdrop');
+    const zoomIn = root.querySelector('[data-zoom-in]');
+    const zoomOut = root.querySelector('[data-zoom-out]');
+
+    let index = 0;
+    let scale = 1;
+    let panX = 0;
+    let panY = 0;
+    let pointerStartX = 0;
+    let pointerStartY = 0;
+    let startPanX = 0;
+    let startPanY = 0;
+    let dragging = false;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let lastFocused = null;
+    const pointers = new Map();
+    let pinchStartDistance = 0;
+    let pinchStartScale = 1;
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    const formatCounter = (current, total) => `${String(current + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+
+    const formatDetails = (item) => [item.medium, item.dimensions, item.year].filter(Boolean).join(' · ');
+
+    const renderTransform = () => {
+      image.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${scale})`;
+      zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+      canvas.dataset.zoomed = scale > 1 ? 'true' : 'false';
+    };
+
+    const resetZoom = () => {
+      scale = 1;
+      panX = 0;
+      panY = 0;
+      renderTransform();
+    };
+
+    const setItem = (nextIndex) => {
+      if (!items.length) return;
+      index = (nextIndex + items.length) % items.length;
+      const item = items[index];
+      image.src = item.image;
+      image.alt = item.alt || item.title;
+      title.textContent = item.title;
+      details.textContent = formatDetails(item);
+      counter.textContent = formatCounter(index, items.length);
+      resetZoom();
+      previousButton.disabled = items.length < 2;
+      nextButton.disabled = items.length < 2;
+    };
+
+    const open = (nextIndex) => {
+      lastFocused = document.activeElement;
+      setItem(nextIndex);
+      root.classList.add('is-open');
+      document.documentElement.classList.add('viewer-open');
+      dialog.focus();
+      history.replaceState(null, '', `#artwork-${encodeURIComponent(items[index].href)}`);
+    };
+
+    const close = () => {
+      root.classList.remove('is-open');
+      document.documentElement.classList.remove('viewer-open');
+      const url = new URL(window.location.href);
+      url.hash = '';
+      history.replaceState(null, '', url.toString());
+      lastFocused?.focus?.();
+    };
+
+    const change = (delta) => {
+      if (items.length < 2) return;
+      setItem(index + delta);
+    };
+
+    const setZoom = (nextScale, focusX = 0, focusY = 0) => {
+      const previousScale = scale;
+      scale = clamp(nextScale, 1, 4);
+      if (scale === 1) {
+        panX = 0;
+        panY = 0;
+      } else if (previousScale !== scale) {
+        const ratio = scale / previousScale;
+        panX = (panX - focusX) * ratio + focusX;
+        panY = (panY - focusY) * ratio + focusY;
+      }
+      renderTransform();
+    };
+
+    const zoomAtCenter = (delta) => setZoom(scale + delta);
+
+    const findTrigger = (event) => {
+      const target = event.target instanceof Element ? event.target.closest('[data-artwork-index]') : null;
+      return target ? Number(target.getAttribute('data-artwork-index')) : null;
+    };
+
+    document.addEventListener('click', (event) => {
+      const triggerIndex = findTrigger(event);
+      if (triggerIndex !== null) {
+        event.preventDefault();
+        open(triggerIndex);
+      }
+    });
+
+    closeButton.addEventListener('click', close);
+    backdrop.addEventListener('click', close);
+    previousButton.addEventListener('click', () => change(-1));
+    nextButton.addEventListener('click', () => change(1));
+    zoomIn.addEventListener('click', () => zoomAtCenter(0.25));
+    zoomOut.addEventListener('click', () => zoomAtCenter(-0.25));
+
+    dialog.addEventListener('keydown', (event) => {
+      if (!root.classList.contains('is-open')) return;
+      if (event.key === 'Escape') close();
+      if (event.key === 'ArrowLeft') change(-1);
+      if (event.key === 'ArrowRight') change(1);
+      if (event.key === '+' || event.key === '=') zoomAtCenter(0.25);
+      if (event.key === '-') zoomAtCenter(-0.25);
+      if (event.key === '0') resetZoom();
+    });
+
+    stage.addEventListener('wheel', (event) => {
+      if (!root.classList.contains('is-open')) return;
+      event.preventDefault();
+      const rect = stage.getBoundingClientRect();
+      const focusX = event.clientX - (rect.left + rect.width / 2);
+      const focusY = event.clientY - (rect.top + rect.height / 2);
+      setZoom(scale + (event.deltaY > 0 ? -0.15 : 0.15), focusX, focusY);
+    }, { passive: false });
+
+    stage.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        pinchStartDistance = Math.hypot(b.x - a.x, b.y - a.y);
+        pinchStartScale = scale;
+        dragging = false;
+        stage.releasePointerCapture?.(event.pointerId);
+        return;
+      }
+      swipeStartX = event.clientX;
+      swipeStartY = event.clientY;
+      if (scale > 1) {
+        dragging = true;
+        pointerStartX = event.clientX;
+        pointerStartY = event.clientY;
+        startPanX = panX;
+        startPanY = panY;
+        stage.setPointerCapture(event.pointerId);
+        stage.classList.add('is-dragging');
+      }
+    });
+
+    stage.addEventListener('pointermove', (event) => {
+      if (pointers.has(event.pointerId)) pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const distance = Math.hypot(b.x - a.x, b.y - a.y);
+        if (pinchStartDistance > 0) setZoom(pinchStartScale * (distance / pinchStartDistance));
+        return;
+      }
+      if (!dragging) return;
+      panX = startPanX + (event.clientX - pointerStartX);
+      panY = startPanY + (event.clientY - pointerStartY);
+      renderTransform();
+    });
+
+    const endPointer = (event) => {
+      pointers.delete(event.pointerId);
+      if (pointers.size < 2) pinchStartDistance = 0;
+      if (dragging) {
+        dragging = false;
+        stage.releasePointerCapture?.(event.pointerId);
+        stage.classList.remove('is-dragging');
+        return;
+      }
+      const deltaX = event.clientX - swipeStartX;
+      const deltaY = event.clientY - swipeStartY;
+      if (Math.abs(deltaX) > 70 && Math.abs(deltaX) > Math.abs(deltaY) && scale === 1) {
+        change(deltaX < 0 ? 1 : -1);
+      }
+    };
+
+    stage.addEventListener('pointerup', endPointer);
+    stage.addEventListener('pointercancel', endPointer);
+
+    image.addEventListener('dblclick', (event) => {
+      const rect = stage.getBoundingClientRect();
+      const focusX = event.clientX - (rect.left + rect.width / 2);
+      const focusY = event.clientY - (rect.top + rect.height / 2);
+      setZoom(scale === 1 ? 2 : 1, focusX, focusY);
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (root.classList.contains('is-open')) return;
+      if (event.key === 'Tab') return;
+    });
+  }
+</script>

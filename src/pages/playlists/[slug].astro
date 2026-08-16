@@ -1,0 +1,69 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PlaylistEmbed from '../../components/playlists/PlaylistEmbed.astro';
+
+export async function getStaticPaths() {
+  const playlists = await getCollection('playlists');
+  return playlists.map((playlist) => ({
+    params: { slug: playlist.id },
+    props: { playlist },
+  }));
+}
+
+const { playlist } = Astro.props;
+const { Content } = await render(playlist);
+const data = playlist.data;
+const playlists = await getCollection('playlists');
+const currentIndex = playlists
+  .slice()
+  .sort((a, b) => (a.data.number ?? 999999) - (b.data.number ?? 999999))
+  .findIndex((item) => item.id === playlist.id);
+const sorted = playlists.slice().sort((a, b) => (a.data.number ?? 999999) - (b.data.number ?? 999999));
+const previous = sorted[currentIndex - 1];
+const next = sorted[currentIndex + 1];
+const archiveNumber = data.number ? String(data.number).padStart(3, '0') : undefined;
+---
+
+<BaseLayout title={`${data.title} · Playlists · Artist Archive`} description={data.whenToListen}>
+  <div class="playlist-page">
+    <header class="playlist-page__header">
+      <a class="back-link mono" href="/playlists/">← playlists</a>
+      <div class="playlist-page__eyebrow">
+        <span class="mono">playlist / {archiveNumber ?? '—'}</span>
+        {data.year && <span class="mono">{data.year}</span>}
+      </div>
+      <h1>{data.title}</h1>
+    </header>
+
+    <div class="playlist-page__grid">
+      <section class="playlist-page__player" aria-label={`${data.title} music player`}>
+        <PlaylistEmbed service={data.service} embedUrl={data.embedUrl} title={data.title} />
+      </section>
+
+      <section class="playlist-page__writing">
+        <div class="playlist-note">
+          <p class="mono playlist-note__label">when to listen</p>
+          <p class="playlist-note__listen">{data.whenToListen}</p>
+        </div>
+
+        <div class="playlist-meaning">
+          <p class="mono playlist-note__label">playlist meaning</p>
+          <div class="prose"><Content /></div>
+        </div>
+
+        {data.tags.length > 0 && (
+          <div class="playlist-tags" aria-label="Playlist tags">
+            {data.tags.map((tag) => <a href={`/playlists/?tag=${encodeURIComponent(tag)}`}>{tag}</a>)}
+          </div>
+        )}
+      </section>
+    </div>
+
+    <nav class="playlist-page__nav" aria-label="Playlist navigation">
+      {previous ? <a href={`/playlists/${previous.id}/`}>← {previous.data.title}</a> : <span></span>}
+      <a href="/playlists/">archive</a>
+      {next ? <a href={`/playlists/${next.id}/`}>{next.data.title} →</a> : <span></span>}
+    </nav>
+  </div>
+</BaseLayout>

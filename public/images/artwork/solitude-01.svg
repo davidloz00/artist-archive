@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1500">
+  <defs><filter id="blur"><feGaussianBlur stdDeviation="45"/></filter></defs>
+  <rect width="1200" height="1500" fill="#eae4d8"/>
+  <ellipse cx="710" cy="730" rx="335" ry="515" fill="#2d4033" opacity=".78" filter="url(#blur)"/>
+  <ellipse cx="535" cy="850" rx="270" ry="360" fill="#718071" opacity=".58"/>
+  <path d="M270 1070 C420 770 640 690 910 460 C980 690 930 1030 710 1190 C520 1325 350 1240 270 1070Z" fill="#20211e" opacity=".16"/>
+</svg>

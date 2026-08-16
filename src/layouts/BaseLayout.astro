@@ -1,0 +1,30 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  showHomeLink?: boolean;
+}
+
+const { title = 'Artist Archive', description = 'A living archive of artwork, writing, music, films, sketchbooks, and fragments.', showHomeLink = true } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#eae4d8" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">skip to content</a>
+    <div class="site-shell">
+      {showHomeLink && <a class="site-home-link mono" href="/" aria-label="Return to home">artist archive</a>}
+      <div id="main-content">
+        <slot />
+      </div>
+    </div>
+  </body>
+</html>

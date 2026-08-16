@@ -1,0 +1,50 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SketchbookViewer from '../../components/sketchbooks/SketchbookViewer.astro';
+import '../../styles/sketchbooks.css';
+
+const sketchbooks = (await getCollection('sketchbooks')).sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0));
+const viewerBooks = sketchbooks.map((book) => ({
+  id: book.id,
+  title: book.data.title,
+  year: book.data.year,
+  format: book.data.format,
+  pages: book.data.pages.map((src, index) => ({ src, alt: `${book.data.title}, page ${index + 1}` }))
+}));
+---
+
+<BaseLayout title="Sketchbooks · Artist Archive" description="Physical-feeling digital sketchbooks.">
+  <div class="sketchbook-archive">
+    <header class="archive-header sketchbook-archive__header">
+      <a class="archive-back mono" href="/">← home</a>
+      <div>
+        <span class="mono">archive / {sketchbooks.length}</span>
+        <h1>sketchbooks</h1>
+      </div>
+      <p>Working pages, studies, and notebooks kept close to hand.</p>
+    </header>
+
+    {sketchbooks.length ? (
+      <section class="sketchbook-grid" aria-label="Sketchbook collection">
+        {sketchbooks.map((book) => (
+          <button class="sketchbook-card" type="button" data-sketchbook-open={book.id} aria-label={`Open ${book.data.title}`}>
+            <span class={`sketchbook-card__cover sketchbook-card__cover--${book.data.format}`}>
+              {book.data.cover ? <img src={book.data.cover} alt="" loading="lazy" /> : <span class="sketchbook-card__blank">{book.data.format === 'spread' ? 'M' : 'N'}</span>}
+            </span>
+            <span class="sketchbook-card__caption">
+              <span>{book.data.title}</span>
+              <span class="mono">{book.data.year ?? ''} · {book.data.format}</span>
+            </span>
+          </button>
+        ))}
+      </section>
+    ) : (
+      <section class="empty-state">
+        <p>Add a sketchbook entry to <code>src/content/sketchbooks/</code> to begin the collection.</p>
+      </section>
+    )}
+  </div>
+
+  <SketchbookViewer sketchbooks={viewerBooks} />
+</BaseLayout>

@@ -1,0 +1,38 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/artwork.css';
+
+export async function getStaticPaths() {
+  const artworks = await getCollection('artwork');
+  return artworks.map((artwork) => ({
+    params: { slug: artwork.id },
+    props: { artwork },
+  }));
+}
+
+const { artwork } = Astro.props;
+const { Content } = await render(artwork);
+---
+
+<BaseLayout title={`${artwork.data.title} · Artist Archive`} description={artwork.data.description ?? artwork.data.alt}>
+  <div class="single-artwork-page">
+    <header class="single-artwork-page__header">
+      <a class="mono" href="/artwork/">← artwork</a>
+      <span class="mono">{artwork.data.year ?? ''}</span>
+    </header>
+
+    <figure class="single-artwork">
+      <img src={artwork.data.image} alt={artwork.data.alt} />
+    </figure>
+
+    <section class="single-artwork__info">
+      <h1>{artwork.data.title}</h1>
+      <p class="mono">
+        {[artwork.data.medium, artwork.data.dimensions, artwork.data.year].filter(Boolean).join(' · ')}
+      </p>
+      {artwork.data.description && <p class="single-artwork__description">{artwork.data.description}</p>}
+      <Content />
+    </section>
+  </div>
+</BaseLayout>

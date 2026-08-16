@@ -1,0 +1,341 @@
+.archive-page,
+.single-artwork-page {
+  min-height: 100vh;
+  padding: clamp(1.5rem, 4vw, 4rem);
+}
+
+.archive-header {
+  display: grid;
+  grid-template-columns: minmax(5rem, .28fr) minmax(10rem, .8fr) minmax(12rem, .55fr);
+  gap: 2rem;
+  align-items: start;
+  padding-bottom: clamp(3rem, 8vw, 7rem);
+}
+
+.archive-header h1 {
+  margin: .45rem 0 0;
+  font-family: var(--display);
+  font-size: clamp(3.8rem, 10vw, 8.5rem);
+  font-weight: 500;
+  line-height: .82;
+  letter-spacing: -.045em;
+}
+
+.archive-header > p {
+  max-width: 20rem;
+  margin: 2.1rem 0 0;
+  color: var(--warm-gray);
+  line-height: 1.65;
+}
+
+.archive-back {
+  color: var(--warm-gray);
+  transition: color 200ms ease, transform 200ms ease;
+  width: fit-content;
+}
+.archive-back:hover,
+.archive-back:focus-visible {
+  color: var(--forest);
+  transform: translateX(-.2rem);
+  outline: none;
+}
+
+.artwork-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(2.5rem, 6vw, 6rem) clamp(1rem, 2.2vw, 2.5rem);
+  align-items: start;
+}
+
+.artwork-card {
+  grid-column: span 4;
+  display: block;
+  cursor: zoom-in;
+}
+.artwork-card:nth-child(5n + 2) { margin-top: 5vw; }
+.artwork-card:nth-child(5n + 4) { grid-column: span 5; }
+.artwork-card:nth-child(5n + 5) { grid-column: span 3; margin-top: 8vw; }
+.artwork-card--featured { grid-column: span 5; }
+
+.artwork-card__figure {
+  margin: 0;
+  background: var(--paper-highlight);
+  overflow: hidden;
+}
+.artwork-card__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: transform 500ms cubic-bezier(.18,.76,.18,1), filter 350ms ease;
+}
+.artwork-card:hover .artwork-card__figure img,
+.artwork-card:focus-visible .artwork-card__figure img {
+  transform: scale(1.018);
+  filter: saturate(.96) contrast(1.01);
+}
+.artwork-card:focus-visible { outline: 1px solid var(--forest); outline-offset: .45rem; }
+.artwork-card__caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: .7rem;
+  color: var(--warm-gray);
+  font-size: .82rem;
+}
+.artwork-card__caption > span:first-child { color: var(--ink); }
+
+.empty-state {
+  min-height: 40vh;
+  display: grid;
+  place-items: center start;
+  color: var(--warm-gray);
+}
+
+/* Fullscreen artwork viewer */
+html.viewer-open,
+html.viewer-open body { overflow: hidden; }
+
+.artwork-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease, visibility 240ms ease;
+}
+.artwork-viewer.is-open {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.artwork-viewer__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(22, 26, 23, .56);
+  backdrop-filter: blur(17px) saturate(.8);
+  -webkit-backdrop-filter: blur(17px) saturate(.8);
+}
+
+.artwork-viewer__dialog {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: clamp(3.8rem, 6vw, 6rem) clamp(1rem, 5vw, 5rem) clamp(4.7rem, 7vw, 6.4rem);
+  color: var(--paper-highlight);
+  outline: none;
+}
+
+.artwork-viewer__stage {
+  position: absolute;
+  inset: clamp(3.8rem, 6vw, 6rem) clamp(4rem, 9vw, 10rem) clamp(4.6rem, 8vw, 7rem);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.artwork-viewer__canvas {
+  position: relative;
+  max-width: min(86vw, 100rem);
+  max-height: 100%;
+  display: grid;
+  place-items: center;
+  cursor: grab;
+}
+.artwork-viewer__canvas.is-dragging { cursor: grabbing; }
+.artwork-viewer__image {
+  display: block;
+  max-width: min(82vw, 78rem);
+  max-height: 80vh;
+  width: auto;
+  height: auto;
+  user-select: none;
+  will-change: transform;
+  transform-origin: center center;
+  transition: transform 180ms cubic-bezier(.2,.7,.2,1);
+  box-shadow: 0 25px 90px rgba(0,0,0,.22);
+}
+.artwork-viewer__canvas[data-zoomed="true"] .artwork-viewer__image { transition: none; }
+
+.artwork-viewer__close,
+.artwork-viewer__control {
+  position: absolute;
+  z-index: 3;
+  border: 0;
+  color: var(--paper-highlight);
+  background: transparent;
+  cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease, opacity 180ms ease;
+}
+.artwork-viewer__close {
+  top: 1rem;
+  right: 1.15rem;
+  font-size: 2rem;
+  line-height: 1;
+}
+.artwork-viewer__close:hover,
+.artwork-viewer__control:hover,
+.artwork-viewer__close:focus-visible,
+.artwork-viewer__control:focus-visible {
+  color: #dfe9df;
+  transform: scale(1.1);
+  outline: none;
+}
+.artwork-viewer__control {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3rem;
+  height: 4rem;
+  font-size: 1.8rem;
+}
+.artwork-viewer__control:hover,
+.artwork-viewer__control:focus-visible { transform: translateY(-50%) scale(1.1); }
+.artwork-viewer__control--prev { left: .75rem; }
+.artwork-viewer__control--next { right: .75rem; }
+.artwork-viewer__control:disabled { opacity: .28; cursor: default; }
+
+.artwork-viewer__toolbar {
+  position: absolute;
+  left: clamp(1rem, 5vw, 5rem);
+  right: clamp(1rem, 5vw, 5rem);
+  bottom: 1.2rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.5rem;
+}
+.artwork-viewer__zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-family: var(--mono);
+  font-size: .65rem;
+  letter-spacing: .06em;
+}
+.artwork-viewer__zoom button {
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  border: 1px solid rgba(243,239,230,.35);
+  border-radius: 999px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.artwork-viewer__counter {
+  justify-self: center;
+  font-family: var(--mono);
+  font-size: .67rem;
+  letter-spacing: .09em;
+  opacity: .85;
+}
+.artwork-viewer__meta {
+  justify-self: end;
+  display: grid;
+  gap: .12rem;
+  text-align: right;
+}
+.artwork-viewer__title { font-size: .87rem; }
+.artwork-viewer__details {
+  color: rgba(243,239,230,.64);
+  font-family: var(--mono);
+  font-size: .58rem;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.single-artwork-page { padding-bottom: 6rem; }
+.single-artwork-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: clamp(2rem, 5vw, 5rem);
+  color: var(--warm-gray);
+}
+.single-artwork {
+  margin: 0 auto;
+  max-width: min(78rem, 88vw);
+  background: var(--paper-highlight);
+}
+.single-artwork img { display: block; width: 100%; height: auto; }
+.single-artwork__info {
+  max-width: 44rem;
+  margin: clamp(2.5rem, 5vw, 5rem) auto 0;
+}
+.single-artwork__info h1 {
+  margin: 0 0 .8rem;
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: clamp(3rem, 7vw, 6rem);
+  line-height: .88;
+  letter-spacing: -.035em;
+}
+.single-artwork__info > p { color: var(--warm-gray); }
+.single-artwork__description {
+  margin-top: 2rem;
+  max-width: 34rem;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+@media (max-width: 900px) {
+  .archive-header { grid-template-columns: 1fr; gap: 1rem; }
+  .archive-header > p { margin-top: .5rem; }
+  .artwork-card,
+  .artwork-card--featured,
+  .artwork-card:nth-child(5n + 4),
+  .artwork-card:nth-child(5n + 5) {
+    grid-column: span 6;
+    margin-top: 0;
+  }
+  .artwork-viewer__stage {
+    left: 1rem;
+    right: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .archive-page,
+  .single-artwork-page { padding: 1.25rem; }
+  .archive-header { padding-bottom: 3rem; }
+  .archive-header h1 { font-size: clamp(4rem, 22vw, 6.5rem); }
+  .artwork-grid { grid-template-columns: 1fr; gap: 3rem; }
+  .artwork-card,
+  .artwork-card--featured,
+  .artwork-card:nth-child(5n + 4),
+  .artwork-card:nth-child(5n + 5) { grid-column: 1; }
+
+  .artwork-viewer__dialog {
+    padding: 3.5rem .75rem 5.6rem;
+  }
+  .artwork-viewer__stage {
+    inset: 3.4rem .55rem 5.4rem;
+  }
+  .artwork-viewer__image { max-width: 92vw; max-height: 76vh; }
+  .artwork-viewer__control { width: 2.7rem; }
+  .artwork-viewer__control--prev { left: .15rem; }
+  .artwork-viewer__control--next { right: .15rem; }
+  .artwork-viewer__toolbar {
+    left: .75rem;
+    right: .75rem;
+    grid-template-columns: 1fr auto;
+    gap: .8rem;
+  }
+  .artwork-viewer__counter { grid-column: 2; grid-row: 1; }
+  .artwork-viewer__zoom { grid-column: 1; grid-row: 1; }
+  .artwork-viewer__meta {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .artwork-card__figure img,
+  .artwork-viewer,
+  .artwork-viewer__image { transition: none; }
+}

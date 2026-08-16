@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FilmEmbed from '../../components/films/FilmEmbed.astro';
+import '../../styles/films.css';
+
+const films = (await getCollection('films')).slice().sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0));
+---
+
+<BaseLayout title="Films · Artist Archive" description="Finished films and moving-image work.">
+  <div class="films-page">
+    <header class="films-header">
+      <span class="mono">moving image / {films.length}</span>
+      <h1>films</h1>
+      <p>Short finished works, visual experiments, and things made to be watched rather than scrolled past.</p>
+    </header>
+
+    <div class="film-archive">
+      {films.map((film, index) => (
+        <article class="film-entry">
+          <div class="film-entry__meta">
+            <span class="mono">{String(index + 1).padStart(2, '0')}</span>
+            {film.data.year && <span class="mono">{film.data.year}</span>}
+          </div>
+          <div class="film-entry__content">
+            <div class="film-entry__player">
+              <FilmEmbed youtubeUrl={film.data.youtubeUrl} title={film.data.title} />
+            </div>
+            <div class="film-entry__copy">
+              <div>
+                <h2><a href={`/films/${film.id}/`}>{film.data.title}</a></h2>
+                {film.data.duration && <span class="mono">{film.data.duration}</span>}
+              </div>
+              {film.data.description && <p>{film.data.description}</p>}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+
+
+</BaseLayout>

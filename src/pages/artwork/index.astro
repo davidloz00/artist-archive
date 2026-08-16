@@ -1,0 +1,62 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArtworkViewer from '../../components/artwork/ArtworkViewer.astro';
+import '../../styles/artwork.css';
+
+const artworks = (await getCollection('artwork')).sort((a, b) => {
+  const aDate = a.data.date?.getTime() ?? new Date(`${a.data.year ?? 0}-01-01`).getTime();
+  const bDate = b.data.date?.getTime() ?? new Date(`${b.data.year ?? 0}-01-01`).getTime();
+  return bDate - aDate;
+});
+
+const viewerItems = artworks.map((artwork) => ({
+  title: artwork.data.title,
+  year: artwork.data.year,
+  medium: artwork.data.medium,
+  dimensions: artwork.data.dimensions,
+  image: artwork.data.highResImage ?? artwork.data.image,
+  alt: artwork.data.alt,
+  href: artwork.id,
+}));
+---
+
+<BaseLayout title="Artwork · Artist Archive" description="A quiet archive of finished artwork.">
+  <div class="archive-page">
+    <header class="archive-header">
+      <a class="archive-back mono" href="/">← home</a>
+      <div>
+        <span class="mono">archive / {artworks.length}</span>
+        <h1>artwork</h1>
+      </div>
+      <p>Finished pieces, studies, and things I decided to keep.</p>
+    </header>
+
+    {artworks.length ? (
+      <section class="artwork-grid" aria-label="Artwork collection">
+        {artworks.map((artwork, index) => (
+          <a
+            href={`/artwork/${artwork.id}/`}
+            class:list={["artwork-card", artwork.data.featured && 'artwork-card--featured']}
+            data-artwork-index={index}
+            aria-label={`Open ${artwork.data.title}`}
+          >
+            <figure class="artwork-card__figure">
+              <img src={artwork.data.image} alt={artwork.data.alt} loading={index === 0 ? 'eager' : 'lazy'} />
+            </figure>
+            <div class="artwork-card__caption">
+              <span>{artwork.data.title}</span>
+              <span class="mono">{artwork.data.year ?? ''}</span>
+            </div>
+          </a>
+        ))}
+      </section>
+    ) : (
+      <section class="empty-state">
+        <p>Add an artwork entry to <code>src/content/artwork/</code> to begin the collection.</p>
+      </section>
+    )}
+  </div>
+
+  <ArtworkViewer artworks={viewerItems} />
+</BaseLayout>
