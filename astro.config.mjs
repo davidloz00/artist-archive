@@ -1,7 +1,8 @@
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://example.com',
+  site: 'https://davidloz00.github.io',
+  base: '/artist-archive',
   trailingSlash: 'ignore',
   build: {
     format: 'directory'
