@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import ArtworkViewer from '../../components/artwork/ArtworkViewer.astro';
 import '../../styles/artwork.css';
 
@@ -15,7 +16,7 @@ const viewerItems = artworks.map((artwork) => ({
   year: artwork.data.year,
   medium: artwork.data.medium,
   dimensions: artwork.data.dimensions,
-  image: artwork.data.highResImage ?? artwork.data.image,
+  image: withBase(artwork.data.highResImage ?? artwork.data.image),
   alt: artwork.data.alt,
   href: artwork.id,
 }));
@@ -24,7 +25,7 @@ const viewerItems = artworks.map((artwork) => ({
 <BaseLayout title="Artwork · Artist Archive" description="A quiet archive of finished artwork.">
   <div class="archive-page">
     <header class="archive-header">
-      <a class="archive-back mono" href="/">← home</a>
+      <a class="archive-back mono" href={withBase('/')}>← home</a>
       <div>
         <span class="mono">archive / {artworks.length}</span>
         <h1>artwork</h1>
@@ -36,13 +37,13 @@ const viewerItems = artworks.map((artwork) => ({
       <section class="artwork-grid" aria-label="Artwork collection">
         {artworks.map((artwork, index) => (
           <a
-            href={`/artwork/${artwork.id}/`}
+            href={withBase(`/artwork/${artwork.id}/`)}
             class:list={["artwork-card", artwork.data.featured && 'artwork-card--featured']}
             data-artwork-index={index}
             aria-label={`Open ${artwork.data.title}`}
           >
             <figure class="artwork-card__figure">
-              <img src={artwork.data.image} alt={artwork.data.alt} loading={index === 0 ? 'eager' : 'lazy'} />
+              <img src={withBase(artwork.data.image)} alt={artwork.data.alt} loading={index === 0 ? 'eager' : 'lazy'} />
             </figure>
             <div class="artwork-card__caption">
               <span>{artwork.data.title}</span>

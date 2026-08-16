@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 
 const playlists = await getCollection('playlists');
 const sorted = playlists.slice().sort((a, b) => {
@@ -51,10 +52,10 @@ const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) 
                 return (
                   <a
                     class="playlist-row"
-                    href={`/playlists/${item.id}/`}
+                    href={withBase(`/playlists/${item.id}/`)}
                     data-tags={item.data.tags.join('|')}
                     data-search={searchable}
-                    data-url={`/playlists/${item.id}/`}
+                    data-url={withBase(`/playlists/${item.id}/`)}
                   >
                     <span class="mono playlist-row__number">{number}</span>
                     <span class="playlist-row__title-wrap">

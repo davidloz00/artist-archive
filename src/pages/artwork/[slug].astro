@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import '../../styles/artwork.css';
 
 export async function getStaticPaths() {
@@ -18,12 +19,12 @@ const { Content } = await render(artwork);
 <BaseLayout title={`${artwork.data.title} · Artist Archive`} description={artwork.data.description ?? artwork.data.alt}>
   <div class="single-artwork-page">
     <header class="single-artwork-page__header">
-      <a class="mono" href="/artwork/">← artwork</a>
+      <a class="mono" href={withBase('/artwork/')}>← artwork</a>
       <span class="mono">{artwork.data.year ?? ''}</span>
     </header>
 
     <figure class="single-artwork">
-      <img src={artwork.data.image} alt={artwork.data.alt} />
+      <img src={withBase(artwork.data.image)} alt={artwork.data.alt} />
     </figure>
 
     <section class="single-artwork__info">

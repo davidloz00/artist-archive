@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { withBase } from '../../../lib/site';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -12,7 +13,7 @@ const { Content } = await render(entry);
 ---
 <BaseLayout title={`${entry.data.title} · Rituals`} description={entry.data.description ?? entry.data.title}>
   <div class="ritual-page">
-    <a class="back-link ritual-back" href="/writing/">← writing</a>
+    <a class="back-link ritual-back" href={withBase('/writing/')}>← writing</a>
     <header class="ritual-header">
       <p class="mono">rituals / {entry.data.year ?? ''}</p>
       <h1>{entry.data.title}</h1>

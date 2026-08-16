@@ -6,6 +6,8 @@ interface MediaItem {
   caption?: string;
 }
 
+import { withBase } from '../../lib/site';
+
 interface Props {
   media: MediaItem[];
   title?: string;
@@ -19,10 +21,10 @@ const items = media.filter((item) => item?.src || item?.type === 'note');
   <div class="dump-stage">
     {items.map((item, index) => (
       <figure class:list={['dump-slide', index === 0 && 'is-active']} data-slide={index}>
-        {item.type === 'image' && <img src={item.src} alt={item.alt ?? ''} loading={index === 0 ? 'eager' : 'lazy'} />}
+        {item.type === 'image' && <img src={withBase(item.src)} alt={item.alt ?? ''} loading={index === 0 ? 'eager' : 'lazy'} />}
         {item.type === 'video' && (
           <video controls playsinline preload={index === 0 ? 'metadata' : 'none'} poster={item.alt ? undefined : undefined}>
-            <source src={item.src} />
+            <source src={withBase(item.src)} />
           </video>
         )}
         {item.type === 'note' && <figcaption class="dump-note">{item.alt ?? item.src}</figcaption>}

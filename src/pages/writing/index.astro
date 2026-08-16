@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import { getCollection } from 'astro:content';
 
 const [notes, rituals, essays] = await Promise.all([
@@ -39,7 +40,7 @@ const essay = essays[0];
       </div>
       <div class="writing-list">
         {sortedNotes.map((note, index) => (
-          <a class="writing-list__row" href={`/writing/notes/${note.id}/`}>
+          <a class="writing-list__row" href={withBase(`/writing/notes/${note.id}/`)}>
             <span>{String( sortedNotes.length - index ).padStart(2, '0')}</span>
             <strong>{note.data.title}</strong>
             <small>{note.data.date ? note.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</small>
@@ -56,7 +57,7 @@ const essay = essays[0];
       </div>
       <div class="writing-list">
         {sortedRituals.map((ritual, index) => (
-          <a class="writing-list__row" href={`/writing/rituals/${ritual.id}/`}>
+          <a class="writing-list__row" href={withBase(`/writing/rituals/${ritual.id}/`)}>
             <span>{String(index + 1).padStart(2, '0')}</span>
             <strong>{ritual.data.title}</strong>
             <small>{ritual.data.year ?? ''}</small>

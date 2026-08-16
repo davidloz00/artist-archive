@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import FilmEmbed from '../../components/films/FilmEmbed.astro';
 import '../../styles/films.css';
 
@@ -20,7 +21,7 @@ const data = film.data;
 
 <BaseLayout title={`${data.title} · Films · Artist Archive`} description={data.description ?? `Film by ${data.title}.`}>
   <div class="film-page">
-    <a class="back-link mono" href="/films/">← films</a>
+    <a class="back-link mono" href={withBase('/films/')}>← films</a>
 
     <header class="film-page__header">
       <span class="mono">film / {data.year ?? '—'}</span>
@@ -40,9 +41,9 @@ const data = film.data;
     )}
 
     <nav class="film-page__nav" aria-label="Film navigation">
-      {previous ? <a href={`/films/${previous.id}/`}>← {previous.data.title}</a> : <span></span>}
-      <a href="/films/">archive</a>
-      {next ? <a href={`/films/${next.id}/`}>{next.data.title} →</a> : <span></span>}
+      {previous ? <a href={withBase(`/films/${previous.id}/`)}>← {previous.data.title}</a> : <span></span>}
+      <a href={withBase('/films/')}>archive</a>
+      {next ? <a href={withBase(`/films/${next.id}/`)}>{next.data.title} →</a> : <span></span>}
     </nav>
   </div>
 </BaseLayout>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/site';
 
 const elsewhere = [
   ['apple music', '#'],
@@ -12,7 +13,7 @@ const elsewhere = [
 ---
 <BaseLayout title="About · Artist Archive" description="About the artist behind this living creative archive.">
   <main class="about-page">
-    <a class="back-link" href="/">← home</a>
+    <a class="back-link" href={withBase('/')}>← home</a>
 
     <header class="about-hero">
       <span class="mono">about</span>

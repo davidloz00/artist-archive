@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import SketchbookViewer from '../../components/sketchbooks/SketchbookViewer.astro';
 import '../../styles/sketchbooks.css';
 
@@ -10,14 +11,14 @@ const viewerBooks = sketchbooks.map((book) => ({
   title: book.data.title,
   year: book.data.year,
   format: book.data.format,
-  pages: book.data.pages.map((src, index) => ({ src, alt: `${book.data.title}, page ${index + 1}` }))
+  pages: book.data.pages.map((src, index) => ({ src: withBase(src), alt: `${book.data.title}, page ${index + 1}` }))
 }));
 ---
 
 <BaseLayout title="Sketchbooks · Artist Archive" description="Physical-feeling digital sketchbooks.">
   <div class="sketchbook-archive">
     <header class="archive-header sketchbook-archive__header">
-      <a class="archive-back mono" href="/">← home</a>
+      <a class="archive-back mono" href={withBase('/')}>← home</a>
       <div>
         <span class="mono">archive / {sketchbooks.length}</span>
         <h1>sketchbooks</h1>
@@ -30,7 +31,7 @@ const viewerBooks = sketchbooks.map((book) => ({
         {sketchbooks.map((book) => (
           <button class="sketchbook-card" type="button" data-sketchbook-open={book.id} aria-label={`Open ${book.data.title}`}>
             <span class={`sketchbook-card__cover sketchbook-card__cover--${book.data.format}`}>
-              {book.data.cover ? <img src={book.data.cover} alt="" loading="lazy" /> : <span class="sketchbook-card__blank">{book.data.format === 'spread' ? 'M' : 'N'}</span>}
+              {book.data.cover ? <img src={withBase(book.data.cover)} alt="" loading="lazy" /> : <span class="sketchbook-card__blank">{book.data.format === 'spread' ? 'M' : 'N'}</span>}
             </span>
             <span class="sketchbook-card__caption">
               <span>{book.data.title}</span>

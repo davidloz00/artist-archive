@@ -1,4 +1,6 @@
 ---
+import { withBase } from '../lib/site';
+
 const links = [
   { label: 'artwork', href: '/artwork/' },
   { label: 'sketchbooks', href: '/sketchbooks/' },
@@ -10,5 +12,5 @@ const links = [
 ];
 ---
 <nav class="main-nav" aria-label="Main navigation">
-  {links.map((link) => <a class="nav-link" href={link.href}>{link.label}</a>)}
+  {links.map((link) => <a class="nav-link" href={withBase(link.href)}>{link.label}</a>)}
 </nav>

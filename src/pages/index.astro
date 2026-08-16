@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import MainNav from '../components/MainNav.astro';
+import { withBase } from '../lib/site';
 
 const artworks = await getCollection('artwork');
 const featured = artworks.find((art) => art.data.featured) ?? artworks[0];
@@ -14,15 +15,12 @@ const featured = artworks.find((art) => art.data.featured) ?? artworks[0];
       <section class="home-intro">
         <h1 class="site-name">your name</h1>
         <MainNav />
-        <div class="home-about">
-          <a class="mono nav-link" href="/about/">about</a>
-        </div>
       </section>
 
       {featured && (
         <section class="featured-art" aria-label="Featured artwork">
-          <a class="featured-art__link" href={`/artwork/${featured.id}/`}>
-            <img class="featured-art__image" src={featured.data.image} alt={featured.data.alt} />
+          <a class="featured-art__link" href={withBase(`/artwork/${featured.id}/`)}>
+            <img class="featured-art__image" src={withBase(featured.data.image)} alt={featured.data.alt} />
             <div class="featured-art__caption">
               <span>{featured.data.title}</span>
               <span class="mono">{featured.data.year ?? ''}</span>

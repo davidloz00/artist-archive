@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import FilmEmbed from '../../components/films/FilmEmbed.astro';
 import '../../styles/films.css';
 
@@ -28,7 +29,7 @@ const films = (await getCollection('films')).slice().sort((a, b) => (b.data.year
             </div>
             <div class="film-entry__copy">
               <div>
-                <h2><a href={`/films/${film.id}/`}>{film.data.title}</a></h2>
+                <h2><a href={withBase(`/films/${film.id}/`)}>{film.data.title}</a></h2>
                 {film.data.duration && <span class="mono">{film.data.duration}</span>}
               </div>
               {film.data.description && <p>{film.data.description}</p>}

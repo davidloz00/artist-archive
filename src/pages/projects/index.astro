@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 
 const entries = (await getCollection('projects')).sort((a, b) => {
   const ad = a.data.date?.getTime() ?? 0;
@@ -26,7 +27,7 @@ const groups = [...new Set(entries.map((entry) => entry.data.year ?? entry.data.
         <h2 id={`year-${year}`} class="archive-year__title">{year}</h2>
         <div class="project-list">
           {entries.filter((entry) => (entry.data.year ?? entry.data.date?.getFullYear()) === year).map((entry, index) => (
-            <a class="project-row" href={`/projects/${entry.id}/`}>
+            <a class="project-row" href={withBase(`/projects/${entry.id}/`)}>
               <span class="project-row__index">{String(index + 1).padStart(2, '0')}</span>
               <span class="project-row__title">{entry.data.title}</span>
               <span class="project-row__type">{entry.data.type}</span>

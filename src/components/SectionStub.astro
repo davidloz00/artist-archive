@@ -1,4 +1,6 @@
 ---
+import { withBase } from '../lib/site';
+
 interface Props {
   eyebrow: string;
   title: string;
@@ -11,6 +13,6 @@ const { eyebrow, title, message } = Astro.props;
     <p class="mono">{eyebrow}</p>
     <h1>{title}</h1>
     <p class="stub-page__message">{message}</p>
-    <a class="back-link mono" href="/">← home</a>
+    <a class="back-link mono" href={withBase('/')}>← home</a>
   </div>
 </section>

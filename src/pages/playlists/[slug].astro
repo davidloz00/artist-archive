@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import PlaylistEmbed from '../../components/playlists/PlaylistEmbed.astro';
 
 export async function getStaticPaths() {
@@ -28,7 +29,7 @@ const archiveNumber = data.number ? String(data.number).padStart(3, '0') : undef
 <BaseLayout title={`${data.title} · Playlists · Artist Archive`} description={data.whenToListen}>
   <div class="playlist-page">
     <header class="playlist-page__header">
-      <a class="back-link mono" href="/playlists/">← playlists</a>
+      <a class="back-link mono" href={withBase('/playlists/')}>← playlists</a>
       <div class="playlist-page__eyebrow">
         <span class="mono">playlist / {archiveNumber ?? '—'}</span>
         {data.year && <span class="mono">{data.year}</span>}
@@ -54,16 +55,16 @@ const archiveNumber = data.number ? String(data.number).padStart(3, '0') : undef
 
         {data.tags.length > 0 && (
           <div class="playlist-tags" aria-label="Playlist tags">
-            {data.tags.map((tag) => <a href={`/playlists/?tag=${encodeURIComponent(tag)}`}>{tag}</a>)}
+            {data.tags.map((tag) => <a href={withBase(`/playlists/?tag=${encodeURIComponent(tag)}`)}>{tag}</a>)}
           </div>
         )}
       </section>
     </div>
 
     <nav class="playlist-page__nav" aria-label="Playlist navigation">
-      {previous ? <a href={`/playlists/${previous.id}/`}>← {previous.data.title}</a> : <span></span>}
-      <a href="/playlists/">archive</a>
-      {next ? <a href={`/playlists/${next.id}/`}>{next.data.title} →</a> : <span></span>}
+      {previous ? <a href={withBase(`/playlists/${previous.id}/`)}>← {previous.data.title}</a> : <span></span>}
+      <a href={withBase('/playlists/')}>archive</a>
+      {next ? <a href={withBase(`/playlists/${next.id}/`)}>{next.data.title} →</a> : <span></span>}
     </nav>
   </div>
 </BaseLayout>

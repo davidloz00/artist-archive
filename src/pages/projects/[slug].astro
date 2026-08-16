@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { withBase } from '../../lib/site';
 import DumpCarousel from '../../components/projects/DumpCarousel.astro';
 
 export async function getStaticPaths() {
@@ -17,7 +18,7 @@ const isDump = entry.data.type === 'dump' || media.length > 0;
 <BaseLayout title={`${entry.data.title} · Projects`} description={entry.data.description ?? undefined}>
   <div class="project-detail">
     <header class="project-detail__header">
-      <a class="mono back-link" href="/projects/">← projects</a>
+      <a class="mono back-link" href={withBase('/projects/')}>← projects</a>
       <p class="mono">{entry.data.type}</p>
       <h1>{entry.data.title}</h1>
       <div class="project-detail__meta">
