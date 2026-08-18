@@ -35,13 +35,16 @@ const playlists = defineCollection({
     number: z.number().optional(),
     year: z.number().optional(),
     date: z.coerce.date().optional(),
+    series: z.enum(['monthly']).optional(),
+    month: z.enum([
+      'january','february','march','april','may','june',
+      'july','august','september','october','november','december'
+    ]).optional(),
     service: z.enum(['apple-music', 'spotify']).default('apple-music'),
     embedUrl: z.string().url(),
     whenToListen: z.string(),
     tags: z.array(z.string()).default([]),
     featured: z.boolean().default(false),
-    series: z.string().optional(),
-    month: z.string().optional(),
   }),
 });
 
@@ -82,11 +85,17 @@ const projects = defineCollection({
   }),
 });
 
+const noteMonths = [
+  'january','february','march','april','may','june',
+  'july','august','september','october','november','december'
+] as const;
+
 const notes = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
   schema: z.object({
     title: z.string(),
-    date: z.coerce.date().optional(),
+    year: z.number(),
+    month: z.enum(noteMonths),
     context: z.string().optional(),
     featured: z.boolean().default(false),
   }),
