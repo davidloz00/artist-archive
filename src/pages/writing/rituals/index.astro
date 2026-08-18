@@ -1,0 +1,252 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { withBase } from '../../../lib/site';
+import { getCollection } from 'astro:content';
+
+const rituals = await getCollection('rituals');
+
+const sortedRituals = [...rituals].sort((a, b) => {
+  const yearA = a.data.year ?? 0;
+  const yearB = b.data.year ?? 0;
+
+  if (yearA !== yearB) {
+    return yearB - yearA;
+  }
+
+  return b.id.localeCompare(a.id);
+});
+
+const years = [...new Set(
+  sortedRituals
+    .map((ritual) => ritual.data.year)
+    .filter((year): year is number => typeof year === 'number')
+)].sort((a, b) => b - a);
+---
+
+<BaseLayout
+  title="Rituals · sid !!!"
+  description="Fiction, stories, and invented things."
+>
+  <main class="rituals-page">
+    <a class="back-link" href={withBase('/writing/')}>
+      ← writing
+    </a>
+
+    <header class="rituals-header">
+      <div>
+        <p class="mono">writing / 03</p>
+        <h1>rituals</h1>
+      </div>
+
+      <p class="rituals-header__count mono">
+        {String(sortedRituals.length).padStart(2, '0')} stories
+      </p>
+    </header>
+
+    <p class="rituals-intro">
+      fiction, stories &amp; invented things
+    </p>
+
+    {sortedRituals.length === 0 ? (
+      <p class="rituals-empty">
+        nothing here yet.
+      </p>
+    ) : (
+      <div class="rituals-archive">
+        {years.map((year) => (
+          <section class="rituals-year" aria-labelledby={`rituals-${year}`}>
+            <h2 id={`rituals-${year}`} class="mono">
+              {year}
+            </h2>
+
+            <div class="rituals-list">
+              {sortedRituals
+                .filter((ritual) => ritual.data.year === year)
+                .map((ritual, index) => (
+                  <a
+                    class="ritual-row"
+                    href={withBase(`/writing/rituals/${ritual.id}/`)}
+                  >
+                    <span class="ritual-row__number mono">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+
+                    <div class="ritual-row__main">
+                      <h3>{ritual.data.title}</h3>
+
+                      {ritual.data.description && (
+                        <p>{ritual.data.description}</p>
+                      )}
+                    </div>
+
+                    <span class="ritual-row__arrow" aria-hidden="true">
+                      ↗
+                    </span>
+                  </a>
+                ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    )}
+  </main>
+</BaseLayout>
+
+<style>
+  .rituals-page {
+    width: min(100% - 2rem, 1080px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 7rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 10vw, 8rem);
+  }
+
+  .rituals-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid color-mix(
+      in srgb,
+      currentColor 16%,
+      transparent
+    );
+  }
+
+  .rituals-header h1 {
+    margin: .2rem 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 11vw, 9rem);
+    font-weight: 400;
+    line-height: .88;
+  }
+
+  .rituals-header__count {
+    padding-bottom: .45rem;
+    white-space: nowrap;
+    opacity: .55;
+  }
+
+  .rituals-intro {
+    max-width: 34rem;
+    margin: 1.5rem 0 clamp(4rem, 9vw, 8rem);
+    opacity: .62;
+  }
+
+  .rituals-year {
+    display: grid;
+    grid-template-columns: minmax(5rem, 10rem) 1fr;
+    gap: 2rem;
+    padding: 1.5rem 0 4rem;
+    border-top: 1px solid color-mix(
+      in srgb,
+      currentColor 12%,
+      transparent
+    );
+  }
+
+  .rituals-year h2 {
+    margin: .5rem 0 0;
+    font-size: .78rem;
+    font-weight: 400;
+  }
+
+  .rituals-list {
+    display: grid;
+  }
+
+  .ritual-row {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) 2rem;
+    gap: 1rem;
+    align-items: start;
+    padding: 1.15rem 0;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(
+      in srgb,
+      currentColor 10%,
+      transparent
+    );
+    transition:
+      transform 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .ritual-row:hover,
+  .ritual-row:focus-visible {
+    transform: translateX(.45rem);
+  }
+
+  .ritual-row__number {
+    padding-top: .3rem;
+    font-size: .68rem;
+    opacity: .42;
+  }
+
+  .ritual-row__main h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 400;
+    line-height: .95;
+  }
+
+  .ritual-row__main p {
+    max-width: 34rem;
+    margin: .65rem 0 0;
+    font-size: .9rem;
+    line-height: 1.5;
+    opacity: .58;
+  }
+
+  .ritual-row__arrow {
+    padding-top: .15rem;
+    font-size: 1.1rem;
+    opacity: .48;
+    transition: transform 180ms ease;
+  }
+
+  .ritual-row:hover .ritual-row__arrow,
+  .ritual-row:focus-visible .ritual-row__arrow {
+    transform: translate(.15rem, -.15rem);
+  }
+
+  .rituals-empty {
+    font-family: var(--font-display);
+    font-size: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .rituals-header {
+      align-items: start;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .rituals-year {
+      grid-template-columns: 1fr;
+      gap: .75rem;
+    }
+
+    .ritual-row {
+      grid-template-columns: 2.2rem minmax(0, 1fr) 1.5rem;
+      gap: .7rem;
+    }
+
+    .ritual-row__main h3 {
+      font-size: clamp(1.8rem, 10vw, 3rem);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ritual-row,
+    .ritual-row__arrow {
+      transition: none;
+    }
+  }
+</style>
