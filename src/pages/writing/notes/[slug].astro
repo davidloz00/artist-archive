@@ -3,7 +3,70 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { withBase } from '../../../lib/site';
 import { getCollection, render } from 'astro:content';
 
-const monthOrder = [
+export async function getStaticPaths() {
+  const notes = await getCollection('notes');
+
+  const months = [
+    'january',
+    'february',
+    'march',
+    'april',
+    'may',
+    'june',
+    'july',
+    'august',
+    'september',
+    'october',
+    'november',
+    'december'
+  ];
+
+  const sortedNotes = [...notes].sort((a, b) => {
+    const aYear = a.data.year ?? a.data.date?.getFullYear() ?? 0;
+    const bYear = b.data.year ?? b.data.date?.getFullYear() ?? 0;
+
+    if (aYear !== bYear) {
+      return bYear - aYear;
+    }
+
+    const aMonthName =
+      a.data.month ??
+      (a.data.date
+        ? months[a.data.date.getMonth()]
+        : 'january');
+
+    const bMonthName =
+      b.data.month ??
+      (b.data.date
+        ? months[b.data.date.getMonth()]
+        : 'january');
+
+    const aMonthIndex = months.indexOf(aMonthName);
+    const bMonthIndex = months.indexOf(bMonthName);
+
+    if (aMonthIndex !== bMonthIndex) {
+      return bMonthIndex - aMonthIndex;
+    }
+
+    return b.id.localeCompare(a.id);
+  });
+
+  return sortedNotes.map((entry, index) => ({
+    params: { slug: entry.id },
+
+    props: {
+      entry,
+      position: index,
+      total: sortedNotes.length,
+      previous: sortedNotes[index + 1] ?? null,
+      next: sortedNotes[index - 1] ?? null
+    }
+  }));
+}
+
+const { entry, position, total, previous, next } = Astro.props;
+
+const months = [
   'january',
   'february',
   'march',
@@ -18,53 +81,6 @@ const monthOrder = [
   'december'
 ];
 
-export async function getStaticPaths() {
-  const notes = await getCollection('notes');
-
-  const sortedNotes = [...notes].sort((a, b) => {
-    const aYear = a.data.year ?? a.data.date?.getFullYear() ?? 0;
-    const bYear = b.data.year ?? b.data.date?.getFullYear() ?? 0;
-
-    if (aYear !== bYear) {
-      return bYear - aYear;
-    }
-
-    const aMonth =
-      a.data.month ??
-      (a.data.date
-        ? monthOrder[a.data.date.getMonth()]
-        : 'january');
-
-    const bMonth =
-      b.data.month ??
-      (b.data.date
-        ? monthOrder[b.data.date.getMonth()]
-        : 'january');
-
-    const aMonthIndex = monthOrder.indexOf(aMonth);
-    const bMonthIndex = monthOrder.indexOf(bMonth);
-
-    if (aMonthIndex !== bMonthIndex) {
-      return bMonthIndex - aMonthIndex;
-    }
-
-    return b.id.localeCompare(a.id);
-  });
-
-  return sortedNotes.map((entry, index) => ({
-    params: { slug: entry.id },
-    props: {
-      entry,
-      position: index,
-      total: sortedNotes.length,
-      previous: sortedNotes[index + 1] ?? null,
-      next: sortedNotes[index - 1] ?? null
-    }
-  }));
-}
-
-const { entry, position, total, previous, next } = Astro.props;
-
 const year =
   entry.data.year ??
   entry.data.date?.getFullYear() ??
@@ -73,7 +89,7 @@ const year =
 const month =
   entry.data.month ??
   (entry.data.date
-    ? monthOrder[entry.data.date.getMonth()]
+    ? months[entry.data.date.getMonth()]
     : 'january');
 
 const previousUrl = previous
