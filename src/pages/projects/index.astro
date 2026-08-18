@@ -9,32 +9,250 @@ const entries = (await getCollection('projects')).sort((a, b) => {
   return bd - ad;
 });
 
-const groups = [...new Set(entries.map((entry) => entry.data.year ?? entry.data.date?.getFullYear()).filter(Boolean))] as number[];
+const groups = [...new Set(
+  entries
+    .map((entry) => entry.data.year ?? entry.data.date?.getFullYear())
+    .filter((year): year is number => typeof year === 'number')
+)].sort((a, b) => b - a);
 ---
 
-<BaseLayout title="Projects · Artist Archive">
-  <div class="archive-page projects-page">
-    <header class="archive-header">
+<BaseLayout
+  title="Projects · sid !!!"
+  description="Work in progress, experiments, logs, fragments, and things worth keeping."
+>
+  <main class="projects-page">
+    <a class="back-link" href={withBase('/')}>
+      ← home
+    </a>
+
+    <header class="projects-header">
       <div>
         <p class="mono">archive</p>
         <h1>projects</h1>
       </div>
-      <p class="archive-intro">work in progress, experiments, logs, fragments, and things worth keeping.</p>
+
+      <p class="projects-intro">
+        work in progress, experiments, logs, fragments, and things worth keeping.
+      </p>
     </header>
 
     {groups.map((year) => (
-      <section class="archive-year" aria-labelledby={`year-${year}`}>
-        <h2 id={`year-${year}`} class="archive-year__title">{year}</h2>
-        <div class="project-list">
-          {entries.filter((entry) => (entry.data.year ?? entry.data.date?.getFullYear()) === year).map((entry, index) => (
-            <a class="project-row" href={withBase(`/projects/${entry.id}/`)}>
-              <span class="project-row__index">{String(index + 1).padStart(2, '0')}</span>
-              <span class="project-row__title">{entry.data.title}</span>
-              <span class="project-row__type">{entry.data.type}</span>
-            </a>
-          ))}
+      <section class="projects-year" aria-labelledby={`year-${year}`}>
+        <h2 id={`year-${year}`} class="mono">
+          {year}
+        </h2>
+
+        <div class="projects-list">
+          {entries
+            .filter(
+              (entry) =>
+                (entry.data.year ?? entry.data.date?.getFullYear()) === year
+            )
+            .map((entry, index) => (
+              <a
+                class="project-row"
+                href={withBase(`/projects/${entry.id}/`)}
+              >
+                <span class="project-row__index mono">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+
+                <div class="project-row__main">
+                  <h3>{entry.data.title}</h3>
+
+                  {entry.data.description && (
+                    <p>{entry.data.description}</p>
+                  )}
+                </div>
+
+                <span class="project-row__type mono">
+                  {entry.data.type}
+                </span>
+
+                <span class="project-row__arrow" aria-hidden="true">
+                  ↗
+                </span>
+              </a>
+            ))}
         </div>
       </section>
     ))}
-  </div>
+  </main>
 </BaseLayout>
+
+<style>
+  .projects-page {
+    width: min(100% - 2rem, 1080px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 7rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 10vw, 8rem);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .back-link:hover,
+  .back-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .projects-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 3rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid color-mix(
+      in srgb,
+      currentColor 16%,
+      transparent
+    );
+  }
+
+  .projects-header h1 {
+    margin: .2rem 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 11vw, 9rem);
+    font-weight: 400;
+    line-height: .88;
+  }
+
+  .projects-intro {
+    max-width: 26rem;
+    margin: 0 0 .4rem;
+    line-height: 1.5;
+    opacity: .58;
+  }
+
+  .projects-year {
+    display: grid;
+    grid-template-columns: minmax(5rem, 10rem) 1fr;
+    gap: 2rem;
+    padding: 1.5rem 0 4rem;
+    border-top: 1px solid color-mix(
+      in srgb,
+      currentColor 12%,
+      transparent
+    );
+    margin-top: clamp(4rem, 8vw, 7rem);
+  }
+
+  .projects-year h2 {
+    margin: .45rem 0 0;
+    font-size: .78rem;
+    font-weight: 400;
+  }
+
+  .projects-list {
+    display: grid;
+  }
+
+  .project-row {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto 2rem;
+    gap: 1rem;
+    align-items: start;
+    padding: 1.1rem 0;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(
+      in srgb,
+      currentColor 10%,
+      transparent
+    );
+    transition:
+      transform 180ms ease,
+      opacity 180ms ease;
+  }
+
+  .project-row:hover,
+  .project-row:focus-visible {
+    transform: translateX(.45rem);
+  }
+
+  .project-row__index {
+    padding-top: .3rem;
+    font-size: .68rem;
+    opacity: .4;
+  }
+
+  .project-row__main h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 3.5rem);
+    font-weight: 400;
+    line-height: .95;
+  }
+
+  .project-row__main p {
+    max-width: 38rem;
+    margin: .55rem 0 0;
+    font-size: .88rem;
+    line-height: 1.5;
+    opacity: .55;
+  }
+
+  .project-row__type {
+    padding-top: .35rem;
+    font-size: .66rem;
+    opacity: .38;
+    white-space: nowrap;
+  }
+
+  .project-row__arrow {
+    padding-top: .15rem;
+    font-size: 1rem;
+    opacity: .45;
+    transition: transform 180ms ease;
+  }
+
+  .project-row:hover .project-row__arrow,
+  .project-row:focus-visible .project-row__arrow {
+    transform: translate(.15rem, -.15rem);
+  }
+
+  @media (max-width: 760px) {
+    .projects-header {
+      align-items: start;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .projects-intro {
+      margin-bottom: 0;
+      max-width: 32rem;
+    }
+
+    .projects-year {
+      grid-template-columns: 1fr;
+      gap: .75rem;
+    }
+
+    .project-row {
+      grid-template-columns: 2rem minmax(0, 1fr) 1.5rem;
+      gap: .7rem;
+    }
+
+    .project-row__type {
+      grid-column: 2;
+      grid-row: 2;
+      padding-top: 0;
+    }
+
+    .project-row__arrow {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-row,
+    .project-row__arrow {
+      transition: none;
+    }
+  }
+</style>
