@@ -1,0 +1,172 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import { withBase } from '../../../../lib/site';
+import { getCollection } from 'astro:content';
+
+const rituals = await getCollection('rituals');
+const sorted = [...rituals].sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0) || a.data.title.localeCompare(b.data.title));
+const years = [...new Set(sorted.map((entry) => entry.data.year ?? 'undated'))].sort((a, b) => String(b).localeCompare(String(a)));
+---
+
+<BaseLayout title="Rituals · sid !!!" description="fiction, stories & invented things.">
+  <main class="rituals-archive">
+    <a class="back-link" href={withBase('/writing/')}>← writing</a>
+
+    <header class="rituals-archive__header">
+      <p class="mono">writing / 03</p>
+      <h1>rituals</h1>
+      <p class="rituals-archive__intro">fiction, stories &amp; invented things</p>
+    </header>
+
+    {sorted.length === 0 ? (
+      <p class="rituals-empty">nothing here yet.</p>
+    ) : (
+      <div class="ritual-years">
+        {years.map((year) => (
+          <section class="ritual-year" aria-labelledby={`rituals-${year}`}>
+            <h2 id={`rituals-${year}`} class="mono">{year}</h2>
+            <div class="ritual-list">
+              {sorted.filter((entry) => (entry.data.year ?? 'undated') === year).map((entry, index) => (
+                <a class="ritual-row" href={withBase(`/writing/rituals/${entry.id}/`)}>
+                  <span class="ritual-row__index mono">{String(index + 1).padStart(2, '0')}</span>
+                  <span class="ritual-row__main">
+                    <strong>{entry.data.title}</strong>
+                    {entry.data.description && <span>{entry.data.description}</span>}
+                  </span>
+                  <span class="ritual-row__arrow" aria-hidden="true">→</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    )}
+  </main>
+</BaseLayout>
+
+<style>
+  .rituals-archive {
+    width: min(100% - 2rem, 980px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 7rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 10vw, 9rem);
+  }
+
+  .rituals-archive__header {
+    max-width: 720px;
+    margin: 0 auto clamp(5rem, 12vw, 9rem);
+  }
+
+  .rituals-archive__header h1 {
+    margin: .45rem 0 1.2rem;
+    font-family: var(--font-display);
+    font-size: clamp(4.5rem, 12vw, 10rem);
+    font-weight: 400;
+    line-height: .86;
+  }
+
+  .rituals-archive__intro {
+    max-width: 30rem;
+    margin: 0;
+    opacity: .62;
+  }
+
+  .ritual-year {
+    display: grid;
+    grid-template-columns: minmax(4rem, 9rem) 1fr;
+    gap: 2rem;
+    padding: 1.5rem 0 4rem;
+    border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  .ritual-year h2 {
+    margin: .4rem 0 0;
+    font-size: .75rem;
+    font-weight: 400;
+  }
+
+  .ritual-list {
+    display: grid;
+  }
+
+  .ritual-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.25rem;
+    align-items: start;
+    padding: 1.1rem 0 1.3rem;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ritual-row__index,
+  .ritual-row__arrow {
+    font-size: .7rem;
+    opacity: .42;
+    padding-top: .35rem;
+  }
+
+  .ritual-row__main {
+    display: grid;
+    gap: .45rem;
+  }
+
+  .ritual-row__main strong {
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 4vw, 2.8rem);
+    font-weight: 400;
+    line-height: .98;
+  }
+
+  .ritual-row__main span {
+    max-width: 36rem;
+    font-size: .84rem;
+    opacity: .5;
+  }
+
+  .ritual-row:hover .ritual-row__main strong,
+  .ritual-row:focus-visible .ritual-row__main strong {
+    color: var(--forest, currentColor);
+  }
+
+  .ritual-row:hover .ritual-row__arrow,
+  .ritual-row:focus-visible .ritual-row__arrow {
+    opacity: 1;
+    transform: translateX(.2rem);
+  }
+
+  .ritual-row__arrow {
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .rituals-empty {
+    font-family: var(--font-display);
+    font-size: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .ritual-year {
+      grid-template-columns: 1fr;
+      gap: .75rem;
+    }
+
+    .ritual-row {
+      grid-template-columns: auto 1fr;
+    }
+
+    .ritual-row__arrow {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ritual-row__arrow {
+      transition: none;
+    }
+  }
+</style>
