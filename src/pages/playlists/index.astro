@@ -9,15 +9,16 @@ const sorted = playlists.slice().sort((a, b) => {
   if (yearDiff !== 0) return yearDiff;
   return (b.data.number ?? 0) - (a.data.number ?? 0);
 });
+
 const years = [...new Set(sorted.map((item) => item.data.year).filter(Boolean))] as number[];
 const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) => a.localeCompare(b));
+const total = sorted.length;
 ---
-
 <BaseLayout title="Playlists · Artist Archive" description="An Apple Music-first archive of playlists, liner notes, and stories.">
   <div class="playlists-page">
     <header class="playlists-header">
       <div>
-        <span class="mono">music archive / {sorted.length}</span>
+        <span class="mono">music archive / {total}</span>
         <h1>playlists</h1>
         <p class="playlists-intro">An evolving collection of songs, situations, seasons, and memories.</p>
       </div>
@@ -25,14 +26,18 @@ const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) 
     </header>
 
     <section class="playlists-tools" aria-label="Playlist search and filters">
-      <label class="search-field">
-        <span class="sr-only">Search playlists</span>
-        <input id="playlist-search" type="search" placeholder="search playlists..." autocomplete="off" />
-      </label>
+      <div class="playlist-search-wrap">
+        <label class="search-field">
+          <span class="sr-only">Search playlists</span>
+          <input id="playlist-search" type="search" placeholder="search playlists..." autocomplete="off" />
+        </label>
+        <button id="clear-search" class="search-clear" type="button" hidden aria-label="Clear playlist search">clear</button>
+      </div>
       <div class="playlist-filter-row" role="list" aria-label="Playlist tags">
         <button class="filter-chip is-active" type="button" data-tag="all">all</button>
         {tags.map((tag) => <button class="filter-chip" type="button" data-tag={tag}>{tag}</button>)}
       </div>
+      <p id="playlist-results" class="playlist-results mono" aria-live="polite">showing {total} of {total}</p>
     </section>
 
     <div id="playlist-empty" class="playlist-empty" hidden>
@@ -48,7 +53,12 @@ const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) 
             <div class="playlist-list">
               {yearItems.map((item) => {
                 const number = item.data.number ? String(item.data.number).padStart(3, '0') : '—';
-                const searchable = [item.data.title, item.data.whenToListen, item.data.tags.join(' ')].join(' ').toLowerCase();
+                const searchable = [
+                  item.data.title,
+                  item.data.whenToListen,
+                  item.data.tags.join(' '),
+                  item.body ?? ''
+                ].join(' ').toLowerCase();
                 return (
                   <a
                     class="playlist-row"
@@ -75,11 +85,13 @@ const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) 
 
   <script>
     const search = document.querySelector('#playlist-search');
+    const clearSearch = document.querySelector('#clear-search');
     const rows = [...document.querySelectorAll('.playlist-row')];
     const yearSections = [...document.querySelectorAll('.playlist-year')];
     const empty = document.querySelector('#playlist-empty');
     const chips = [...document.querySelectorAll('.filter-chip')];
     const surprise = document.querySelector('#surprise-me');
+    const results = document.querySelector('#playlist-results');
 
     let activeTag = 'all';
 
@@ -103,9 +115,19 @@ const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) 
       });
 
       if (empty) empty.hidden = visible !== 0;
+      if (results) results.textContent = `showing ${visible} of ${rows.length}`;
+      if (clearSearch) clearSearch.hidden = !query;
     };
 
     search?.addEventListener('input', applyFilters);
+
+    clearSearch?.addEventListener('click', () => {
+      if (!search) return;
+      search.value = '';
+      search.focus();
+      applyFilters();
+    });
+
     chips.forEach((chip) => {
       chip.addEventListener('click', () => {
         activeTag = chip.dataset.tag || 'all';
@@ -122,6 +144,17 @@ const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) 
       if (url) window.location.href = url;
     });
 
+    document.addEventListener('keydown', (event) => {
+      if (event.key === '/' && document.activeElement !== search) {
+        event.preventDefault();
+        search?.focus();
+      }
+      if (event.key === 'Escape' && document.activeElement === search && search?.value) {
+        search.value = '';
+        applyFilters();
+      }
+    });
+
     const params = new URLSearchParams(window.location.search);
     const initialTag = params.get('tag');
     if (initialTag && chips.some((chip) => chip.dataset.tag === initialTag)) {
@@ -131,4 +164,26 @@ const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) 
 
     applyFilters();
   </script>
+
+  <style>
+    .playlist-search-wrap { display: flex; align-items: end; gap: 1rem; max-width: 40rem; }
+    .playlist-search-wrap .search-field { flex: 1; max-width: none; }
+    .search-clear {
+      min-width: auto;
+      min-height: 44px;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      padding: .6rem 0 .75rem;
+      background: transparent;
+      color: var(--warm-gray);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: .64rem;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .search-clear:hover,
+    .search-clear:focus-visible { color: var(--forest); outline: none; }
+    .playlist-results { margin: .85rem 0 0; color: var(--warm-gray); }
+  </style>
 </BaseLayout>

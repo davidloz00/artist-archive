@@ -1,22 +1,15 @@
-# Artist Archive — Final Candidate
+# Playlist archive polish patch
 
-Astro-based personal artist archive designed for regular content updates.
+This patch updates the existing playlist archive without replacing the rest of the site.
 
-## Content-first workflow
+## What changed
 
-Add or edit entries under `src/content/` and place media in the appropriate public/assets directory. The site generates archive pages, counters, viewers, navigation, and responsive layouts from the content automatically.
+- Search now includes playlist meaning/body text as well as title, When to Listen, and tags.
+- Added a live `showing X of Y` result count.
+- Added a clear-search control.
+- `/` focuses the playlist search on desktop keyboards.
+- `Escape` clears the active search.
+- The Apple Music/Spotify iframe is presented more seamlessly without an extra in-site player header.
+- Existing year grouping, tag filtering, Surprise Me, and previous/next navigation remain intact.
 
-## Main sections
-
-- Artwork — gallery + zoomable lightbox
-- Sketchbooks — spread and notepad viewers
-- Projects — ongoing/archive material
-- Dumps — mixed photo/video carousel
-- Writing — Essays, Notes App, Rituals
-- Playlists — Apple Music-first archive + search/filtering + Surprise Me
-- Films — YouTube-backed finished works
-- About — artist bio and external links
-
-## Before launch
-
-Replace placeholder identity, artwork, social links, email, domain settings, and sample content. Run `npm install`, then `npm run check` and `npm run build` locally before deploying.
+Upload the `src` folder contents into the existing GitHub repository and commit the changes to `main`.

@@ -4,23 +4,18 @@ interface Props {
   embedUrl: string;
   title: string;
 }
+
 const { service, embedUrl, title } = Astro.props;
 const provider = service === 'apple-music' ? 'Apple Music' : 'Spotify';
 ---
 <div class="playlist-player" data-service={service}>
-  <div class="playlist-player__topline">
-    <span class="mono">{provider}</span>
-    <span class="playlist-player__live">player</span>
-  </div>
-  <div class="playlist-player__frame">
-    <iframe
-      title={`${title} on ${provider}`}
-      src={embedUrl}
-      loading="lazy"
-      allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
-      frameborder="0"
-      class="playlist-player__iframe"
-      sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
-    ></iframe>
-  </div>
+  <iframe
+    title={`${title} on ${provider}`}
+    src={embedUrl}
+    loading="lazy"
+    allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
+    frameborder="0"
+    class="playlist-player__iframe"
+    sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
+  ></iframe>
 </div>
