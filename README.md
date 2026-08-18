@@ -1,15 +1,20 @@
-# Playlist archive polish patch
+# Playlist series system
 
-This patch updates the existing playlist archive without replacing the rest of the site.
+This patch adds structured playlist-series metadata without turning year into a redundant tag.
 
-## What changed
+For the recurring monthly playlists, use:
 
-- Search now includes playlist meaning/body text as well as title, When to Listen, and tags.
-- Added a live `showing X of Y` result count.
-- Added a clear-search control.
-- `/` focuses the playlist search on desktop keyboards.
-- `Escape` clears the active search.
-- The Apple Music/Spotify iframe is presented more seamlessly without an extra in-site player header.
-- Existing year grouping, tag filtering, Surprise Me, and previous/next navigation remain intact.
+```yaml
+series: monthly
+month: august
+```
 
-Upload the `src` folder contents into the existing GitHub repository and commit the changes to `main`.
+The site then treats:
+- year = archive organization
+- series = recurring series identity
+- month = calendar/month browsing
+- tags = mood/context (night, driving, drawing, rain, etc.)
+
+Random/non-series playlists simply omit `series` and `month` and can keep using freeform `tags`.
+
+Upload `src/content.config.ts` and `src/pages/playlists/index.astro` to the repository, preserving the rest of the current site. This patch assumes the current Astro Content Layer format with `astro/loaders`.

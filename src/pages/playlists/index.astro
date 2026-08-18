@@ -12,8 +12,11 @@ const sorted = playlists.slice().sort((a, b) => {
 
 const years = [...new Set(sorted.map((item) => item.data.year).filter(Boolean))] as number[];
 const tags = [...new Set(sorted.flatMap((item) => item.data.tags))].sort((a, b) => a.localeCompare(b));
+const months = [...new Set(sorted.map((item) => item.data.month).filter(Boolean))].sort((a, b) => a!.localeCompare(b!));
+const series = [...new Set(sorted.map((item) => item.data.series).filter(Boolean))] as string[];
 const total = sorted.length;
 ---
+
 <BaseLayout title="Playlists · Artist Archive" description="An Apple Music-first archive of playlists, liner notes, and stories.">
   <div class="playlists-page">
     <header class="playlists-header">
@@ -33,15 +36,42 @@ const total = sorted.length;
         </label>
         <button id="clear-search" class="search-clear" type="button" hidden aria-label="Clear playlist search">clear</button>
       </div>
-      <div class="playlist-filter-row" role="list" aria-label="Playlist tags">
-        <button class="filter-chip is-active" type="button" data-tag="all">all</button>
-        {tags.map((tag) => <button class="filter-chip" type="button" data-tag={tag}>{tag}</button>)}
+
+      <div class="playlist-filter-groups" aria-label="Playlist filters">
+        <div class="playlist-filter-group">
+          <p class="mono playlist-filter-label">series</p>
+          <div class="playlist-filter-row" role="list" aria-label="Playlist series">
+            <button class="filter-chip is-active" type="button" data-filter-kind="series" data-filter-value="all">all</button>
+            {series.map((value) => (
+              <button class="filter-chip" type="button" data-filter-kind="series" data-filter-value={value}>
+                {value === 'monthly' ? 'monthly playlist' : value}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div class="playlist-filter-group">
+          <p class="mono playlist-filter-label">month</p>
+          <div class="playlist-filter-row" role="list" aria-label="Playlist months">
+            <button class="filter-chip is-active" type="button" data-filter-kind="month" data-filter-value="all">all</button>
+            {months.map((month) => <button class="filter-chip" type="button" data-filter-kind="month" data-filter-value={month}>{month}</button>)}
+          </div>
+        </div>
+
+        <div class="playlist-filter-group">
+          <p class="mono playlist-filter-label">mood / context</p>
+          <div class="playlist-filter-row" role="list" aria-label="Playlist mood and context tags">
+            <button class="filter-chip is-active" type="button" data-filter-kind="tag" data-filter-value="all">all</button>
+            {tags.map((tag) => <button class="filter-chip" type="button" data-filter-kind="tag" data-filter-value={tag}>{tag}</button>)}
+          </div>
+        </div>
       </div>
+
       <p id="playlist-results" class="playlist-results mono" aria-live="polite">showing {total} of {total}</p>
     </section>
 
     <div id="playlist-empty" class="playlist-empty" hidden>
-      Nothing here yet. Try another word or mood.
+      Nothing here yet. Try another word, month, or mood.
     </div>
 
     <div class="playlist-archive" id="playlist-archive">
@@ -57,6 +87,8 @@ const total = sorted.length;
                   item.data.title,
                   item.data.whenToListen,
                   item.data.tags.join(' '),
+                  item.data.series ?? '',
+                  item.data.month ?? '',
                   item.body ?? ''
                 ].join(' ').toLowerCase();
                 return (
@@ -64,6 +96,8 @@ const total = sorted.length;
                     class="playlist-row"
                     href={withBase(`/playlists/${item.id}/`)}
                     data-tags={item.data.tags.join('|')}
+                    data-series={item.data.series ?? ''}
+                    data-month={item.data.month ?? ''}
                     data-search={searchable}
                     data-url={withBase(`/playlists/${item.id}/`)}
                   >
@@ -71,6 +105,12 @@ const total = sorted.length;
                     <span class="playlist-row__title-wrap">
                       <strong>{item.data.title}</strong>
                       <span class="playlist-row__listen">{item.data.whenToListen}</span>
+                      {(item.data.series || item.data.month) && (
+                        <span class="playlist-row__series mono">
+                          {item.data.series === 'monthly' ? 'monthly playlist' : item.data.series}
+                          {item.data.month ? ` · ${item.data.month}` : ''}
+                        </span>
+                      )}
                     </span>
                     <span class="playlist-row__arrow" aria-hidden="true">↗</span>
                   </a>
@@ -93,7 +133,11 @@ const total = sorted.length;
     const surprise = document.querySelector('#surprise-me');
     const results = document.querySelector('#playlist-results');
 
-    let activeTag = 'all';
+    const activeFilters = {
+      series: 'all',
+      month: 'all',
+      tag: 'all'
+    };
 
     const applyFilters = () => {
       const query = (search?.value || '').trim().toLowerCase();
@@ -103,8 +147,10 @@ const total = sorted.length;
         const haystack = row.dataset.search || '';
         const tags = (row.dataset.tags || '').split('|').filter(Boolean);
         const matchesSearch = !query || haystack.includes(query);
-        const matchesTag = activeTag === 'all' || tags.includes(activeTag);
-        const show = matchesSearch && matchesTag;
+        const matchesSeries = activeFilters.series === 'all' || (row.dataset.series || '') === activeFilters.series;
+        const matchesMonth = activeFilters.month === 'all' || (row.dataset.month || '') === activeFilters.month;
+        const matchesTag = activeFilters.tag === 'all' || tags.includes(activeFilters.tag);
+        const show = matchesSearch && matchesSeries && matchesMonth && matchesTag;
         row.hidden = !show;
         if (show) visible += 1;
       });
@@ -130,8 +176,14 @@ const total = sorted.length;
 
     chips.forEach((chip) => {
       chip.addEventListener('click', () => {
-        activeTag = chip.dataset.tag || 'all';
-        chips.forEach((item) => item.classList.toggle('is-active', item === chip));
+        const kind = chip.dataset.filterKind || 'tag';
+        const value = chip.dataset.filterValue || 'all';
+        activeFilters[kind] = value;
+
+        chips
+          .filter((item) => item.dataset.filterKind === kind)
+          .forEach((item) => item.classList.toggle('is-active', item === chip));
+
         applyFilters();
       });
     });
@@ -157,8 +209,19 @@ const total = sorted.length;
 
     const params = new URLSearchParams(window.location.search);
     const initialTag = params.get('tag');
-    if (initialTag && chips.some((chip) => chip.dataset.tag === initialTag)) {
-      const chip = chips.find((item) => item.dataset.tag === initialTag);
+    const initialSeries = params.get('series');
+    const initialMonth = params.get('month');
+
+    if (initialSeries) {
+      const chip = chips.find((item) => item.dataset.filterKind === 'series' && item.dataset.filterValue === initialSeries);
+      if (chip) chip.click();
+    }
+    if (initialMonth) {
+      const chip = chips.find((item) => item.dataset.filterKind === 'month' && item.dataset.filterValue === initialMonth);
+      if (chip) chip.click();
+    }
+    if (initialTag) {
+      const chip = chips.find((item) => item.dataset.filterKind === 'tag' && item.dataset.filterValue === initialTag);
       if (chip) chip.click();
     }
 
@@ -166,6 +229,9 @@ const total = sorted.length;
   </script>
 
   <style>
+    .playlist-filter-groups { display: grid; gap: 1.25rem; }
+    .playlist-filter-group { display: grid; gap: .45rem; }
+    .playlist-filter-label { margin: 0; color: var(--warm-gray); text-transform: uppercase; letter-spacing: .08em; font-size: .62rem; }
     .playlist-search-wrap { display: flex; align-items: end; gap: 1rem; max-width: 40rem; }
     .playlist-search-wrap .search-field { flex: 1; max-width: none; }
     .search-clear {
@@ -185,5 +251,6 @@ const total = sorted.length;
     .search-clear:hover,
     .search-clear:focus-visible { color: var(--forest); outline: none; }
     .playlist-results { margin: .85rem 0 0; color: var(--warm-gray); }
+    .playlist-row__series { display: block; margin-top: .35rem; color: var(--warm-gray); font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; }
   </style>
 </BaseLayout>

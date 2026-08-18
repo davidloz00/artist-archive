@@ -12,10 +12,7 @@ const common = {
 };
 
 const artwork = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/artwork',
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/artwork' }),
   schema: z.object({
     ...common,
     medium: z.string().optional(),
@@ -27,21 +24,12 @@ const artwork = defineCollection({
 });
 
 const blog = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/blog',
-  }),
-  schema: z.object({
-    ...common,
-    substackUrl: z.string().url().optional(),
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/blog' }),
+  schema: z.object({ ...common, substackUrl: z.string().url().optional() }),
 });
 
 const playlists = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/playlists',
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/playlists' }),
   schema: z.object({
     title: z.string(),
     number: z.number().optional(),
@@ -52,14 +40,13 @@ const playlists = defineCollection({
     whenToListen: z.string(),
     tags: z.array(z.string()).default([]),
     featured: z.boolean().default(false),
+    series: z.string().optional(),
+    month: z.string().optional(),
   }),
 });
 
 const films = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/films',
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/films' }),
   schema: z.object({
     title: z.string(),
     year: z.number().optional(),
@@ -70,10 +57,7 @@ const films = defineCollection({
 });
 
 const sketchbooks = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/sketchbooks',
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/sketchbooks' }),
   schema: z.object({
     title: z.string(),
     year: z.number().optional(),
@@ -85,31 +69,21 @@ const sketchbooks = defineCollection({
 });
 
 const projects = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/projects',
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
   schema: z.object({
     ...common,
     type: z.enum(['project', 'experiment', 'log', 'dump']).default('project'),
-    media: z
-      .array(
-        z.object({
-          type: z.enum(['image', 'video', 'note']),
-          src: z.string(),
-          alt: z.string().optional(),
-          caption: z.string().optional(),
-        })
-      )
-      .default([]),
+    media: z.array(z.object({
+      type: z.enum(['image', 'video', 'note']),
+      src: z.string(),
+      alt: z.string().optional(),
+      caption: z.string().optional(),
+    })).default([]),
   }),
 });
 
 const notes = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/notes',
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date().optional(),
@@ -119,10 +93,7 @@ const notes = defineCollection({
 });
 
 const rituals = defineCollection({
-  loader: glob({
-    pattern: '**/*.md',
-    base: './src/content/rituals',
-  }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/rituals' }),
   schema: z.object({
     title: z.string(),
     year: z.number().optional(),
