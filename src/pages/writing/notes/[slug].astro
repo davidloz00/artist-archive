@@ -29,11 +29,17 @@ export async function getStaticPaths() {
       return bYear - aYear;
     }
 
-    const aMonth = a.data.month
-      ?? (a.data.date ? monthOrder[a.data.date.getMonth()] : 'january');
+    const aMonth =
+      a.data.month ??
+      (a.data.date
+        ? monthOrder[a.data.date.getMonth()]
+        : 'january');
 
-    const bMonth = b.data.month
-      ?? (b.data.date ? monthOrder[b.data.date.getMonth()] : 'january');
+    const bMonth =
+      b.data.month ??
+      (b.data.date
+        ? monthOrder[b.data.date.getMonth()]
+        : 'january');
 
     const aMonthIndex = monthOrder.indexOf(aMonth);
     const bMonthIndex = monthOrder.indexOf(bMonth);
@@ -59,10 +65,16 @@ export async function getStaticPaths() {
 
 const { entry, position, total, previous, next } = Astro.props;
 
-const year = entry.data.year ?? entry.data.date?.getFullYear() ?? 0;
+const year =
+  entry.data.year ??
+  entry.data.date?.getFullYear() ??
+  0;
 
-const month = entry.data.month
-  ?? (entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january');
+const month =
+  entry.data.month ??
+  (entry.data.date
+    ? monthOrder[entry.data.date.getMonth()]
+    : 'january');
 
 const previousUrl = previous
   ? withBase(`/writing/notes/${previous.id}/`)
@@ -84,7 +96,10 @@ const { Content } = await render(entry);
       ← notes app
     </a>
 
-    <article class="note" aria-label={`Note ${position + 1} of ${total}`}>
+    <article
+      class="note"
+      aria-label={`Note ${position + 1} of ${total}`}
+    >
       <header class="note__header">
         <p class="mono">
           notes app / {month.toUpperCase()} {year}
@@ -174,7 +189,10 @@ const { Content } = await render(entry);
       };
 
       document.addEventListener('keydown', (event) => {
-        if (event.defaultPrevented || isTypingTarget(event.target)) {
+        if (
+          event.defaultPrevented ||
+          isTypingTarget(event.target)
+        ) {
           return;
         }
 
