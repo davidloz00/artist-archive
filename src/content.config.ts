@@ -94,8 +94,9 @@ const notes = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/notes' }),
   schema: z.object({
     title: z.string(),
-    year: z.number(),
-    month: z.enum(noteMonths),
+    date: z.coerce.date().optional(),
+    year: z.number().optional(),
+    month: z.enum(noteMonths).optional(),
     context: z.string().optional(),
     featured: z.boolean().default(false),
   }),

@@ -7,7 +7,11 @@ export async function getStaticPaths() {
   const notes = await getCollection('notes');
   return notes.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
 }
+
 const { entry } = Astro.props;
+const monthOrder = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+const year = entry.data.year ?? entry.data.date?.getFullYear() ?? 0;
+const month = entry.data.month ?? (entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january');
 const { Content } = await render(entry);
 ---
 <BaseLayout title={`${entry.data.title} · Notes App · sid !!!`} description={entry.data.title}>
@@ -15,7 +19,7 @@ const { Content } = await render(entry);
     <a class="back-link" href={withBase('/writing/notes/')}>← notes app</a>
     <article class="note">
       <header class="note__header">
-        <p class="mono">notes app / {entry.data.month.toUpperCase()} {entry.data.year}</p>
+        <p class="mono">notes app / {month.toUpperCase()} {year}</p>
         <h1>{entry.data.title}</h1>
         {entry.data.context && (
           <a class="note__context" href={`${withBase('/writing/notes/')}?context=${encodeURIComponent(entry.data.context)}`}>
@@ -27,7 +31,6 @@ const { Content } = await render(entry);
     </article>
   </main>
 </BaseLayout>
-
 <style>
 .note-page{width:min(100% - 2rem,920px);margin:0 auto;padding:clamp(2rem,5vw,5rem) 0 7rem}
 .back-link{display:inline-block;margin-bottom:clamp(4rem,12vw,10rem)}

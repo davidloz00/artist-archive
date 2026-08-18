@@ -5,18 +5,25 @@ import { getCollection } from 'astro:content';
 
 const monthOrder = ['january','february','march','april','may','june','july','august','september','october','november','december'];
 const notes = await getCollection('notes');
-const sortedNotes = [...notes].sort((a, b) => {
-  const yearDiff = b.data.year - a.data.year;
-  if (yearDiff) return yearDiff;
-  return monthOrder.indexOf(b.data.month) - monthOrder.indexOf(a.data.month);
+
+const normalized = notes.map((entry) => {
+  const year = entry.data.year ?? entry.data.date?.getFullYear() ?? 0;
+  const month = entry.data.month ?? (entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january');
+  return { entry, year, month };
 });
-const contexts = [...new Set(sortedNotes.map((n) => n.data.context).filter(Boolean))].sort();
-const years = [...new Set(sortedNotes.map((n) => n.data.year))].sort((a,b) => b-a);
+
+const sortedNotes = normalized.sort((a, b) => {
+  const yearDiff = b.year - a.year;
+  if (yearDiff) return yearDiff;
+  return monthOrder.indexOf(b.month) - monthOrder.indexOf(a.month);
+});
+
+const contexts = [...new Set(sortedNotes.map((n) => n.entry.data.context).filter(Boolean))].sort();
+const years = [...new Set(sortedNotes.map((n) => n.year).filter(Boolean))].sort((a,b) => b-a);
 ---
 <BaseLayout title="Notes App · sid !!!" description="Fragments, quotes, observations, things worth remembering.">
   <main class="notes-archive">
     <a class="back-link" href={withBase('/writing/')}>← writing</a>
-
     <header class="notes-archive__header">
       <div>
         <p class="mono">writing / 02</p>
@@ -24,9 +31,7 @@ const years = [...new Set(sortedNotes.map((n) => n.data.year))].sort((a,b) => b-
       </div>
       <p class="mono" id="note-count">{String(sortedNotes.length).padStart(2,'0')} notes</p>
     </header>
-
     <p class="notes-archive__intro">fragments, quotes, observations, things worth remembering</p>
-
     <div class="notes-tools">
       <label class="notes-search">
         <span class="mono">search</span>
@@ -39,23 +44,22 @@ const years = [...new Set(sortedNotes.map((n) => n.data.year))].sort((a,b) => b-
         </div>
       )}
     </div>
-
     <div class="notes-years">
       {years.map((year) => (
         <section class="notes-year" data-year-section>
           <h2 class="mono">{year}</h2>
           <div class="notes-list">
-            {sortedNotes.filter((n) => n.data.year === year).map((note) => (
+            {sortedNotes.filter((n) => n.year === year).map((note) => (
               <a
                 class="note-row"
-                href={withBase(`/writing/notes/${note.id}/`)}
+                href={withBase(`/writing/notes/${note.entry.id}/`)}
                 data-note
-                data-title={note.data.title.toLowerCase()}
-                data-context={(note.data.context ?? '').toLowerCase()}
+                data-title={note.entry.data.title.toLowerCase()}
+                data-context={(note.entry.data.context ?? '').toLowerCase()}
               >
-                <span class="note-row__title">{note.data.title}</span>
-                {note.data.context && <span class="note-row__context">{note.data.context}</span>}
-                <span class="note-row__date mono">{note.data.month.slice(0,3).toUpperCase()} {note.data.year}</span>
+                <span class="note-row__title">{note.entry.data.title}</span>
+                {note.entry.data.context && <span class="note-row__context">{note.entry.data.context}</span>}
+                <span class="note-row__date mono">{note.month.slice(0,3).toUpperCase()} {note.year}</span>
               </a>
             ))}
           </div>
@@ -64,7 +68,6 @@ const years = [...new Set(sortedNotes.map((n) => n.data.year))].sort((a,b) => b-
     </div>
     <p class="notes-empty" id="notes-empty" hidden>nothing matched that.</p>
   </main>
-
   <script is:inline>
     (() => {
       const input = document.querySelector('#notes-search');
@@ -74,7 +77,6 @@ const years = [...new Set(sortedNotes.map((n) => n.data.year))].sort((a,b) => b-
       const count = document.querySelector('#note-count');
       const empty = document.querySelector('#notes-empty');
       let context = '';
-
       function apply() {
         const q = (input?.value || '').trim().toLowerCase();
         let shown = 0;
@@ -91,7 +93,6 @@ const years = [...new Set(sortedNotes.map((n) => n.data.year))].sort((a,b) => b-
         if (count) count.textContent = `${String(shown).padStart(2,'0')} notes`;
         if (empty) empty.hidden = shown !== 0;
       }
-
       input?.addEventListener('input', apply);
       buttons.forEach((button) => button.addEventListener('click', () => {
         context = button.dataset.context || '';
@@ -101,7 +102,6 @@ const years = [...new Set(sortedNotes.map((n) => n.data.year))].sort((a,b) => b-
     })();
   </script>
 </BaseLayout>
-
 <style>
 .notes-archive{width:min(100% - 2rem,980px);margin:0 auto;padding:clamp(2rem,5vw,5rem) 0 6rem}
 .back-link{display:inline-block;margin-bottom:clamp(3rem,8vw,7rem)}
