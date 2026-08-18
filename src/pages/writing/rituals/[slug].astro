@@ -1,0 +1,376 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { withBase } from '../../../lib/site';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const rituals = await getCollection('rituals');
+
+  const sortedRituals = [...rituals].sort((a, b) => {
+    const yearA = a.data.year ?? 0;
+    const yearB = b.data.year ?? 0;
+
+    if (yearA !== yearB) {
+      return yearB - yearA;
+    }
+
+    return b.id.localeCompare(a.id);
+  });
+
+  return sortedRituals.map((entry, index) => ({
+    params: { slug: entry.id },
+    props: {
+      entry,
+      position: index,
+      total: sortedRituals.length,
+      previous: sortedRituals[index + 1] ?? null,
+      next: sortedRituals[index - 1] ?? null
+    }
+  }));
+}
+
+const { entry, position, total, previous, next } = Astro.props;
+
+const previousUrl = previous
+  ? withBase(`/writing/rituals/${previous.id}/`)
+  : '';
+
+const nextUrl = next
+  ? withBase(`/writing/rituals/${next.id}/`)
+  : '';
+
+const { Content } = await render(entry);
+---
+
+<BaseLayout
+  title={`${entry.data.title} · Rituals · sid !!!`}
+  description={entry.data.description ?? entry.data.title}
+>
+  <main class="ritual-page">
+    <a class="back-link" href={withBase('/writing/rituals/')}>
+      ← rituals
+    </a>
+
+    <article
+      class="ritual"
+      aria-label={`Ritual ${position + 1} of ${total}`}
+    >
+      <header class="ritual__header">
+        <p class="mono">
+          rituals
+          {entry.data.year ? ` / ${entry.data.year}` : ''}
+        </p>
+
+        <h1>{entry.data.title}</h1>
+
+        {entry.data.description && (
+          <p class="ritual__description">
+            {entry.data.description}
+          </p>
+        )}
+      </header>
+
+      <div class="ritual__body">
+        <Content />
+      </div>
+
+      <nav
+        class="ritual-nav"
+        aria-label="Ritual navigation"
+        data-previous-url={previousUrl}
+        data-next-url={nextUrl}
+      >
+        {previous ? (
+          <a
+            class="ritual-nav__link ritual-nav__link--previous"
+            href={previousUrl}
+          >
+            <span class="mono">← previous</span>
+            <strong>{previous.data.title}</strong>
+          </a>
+        ) : (
+          <span class="ritual-nav__spacer" aria-hidden="true"></span>
+        )}
+
+        <span class="ritual-nav__count mono">
+          {String(position + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+        </span>
+
+        {next ? (
+          <a
+            class="ritual-nav__link ritual-nav__link--next"
+            href={nextUrl}
+          >
+            <span class="mono">next →</span>
+            <strong>{next.data.title}</strong>
+          </a>
+        ) : (
+          <span class="ritual-nav__spacer" aria-hidden="true"></span>
+        )}
+      </nav>
+    </article>
+  </main>
+
+  <script is:inline>
+    (() => {
+      const nav = document.querySelector('.ritual-nav');
+
+      if (!nav) return;
+
+      const previousUrl =
+        nav.getAttribute('data-previous-url') || '';
+
+      const nextUrl =
+        nav.getAttribute('data-next-url') || '';
+
+      let startX = null;
+      let startY = null;
+
+      const go = (url) => {
+        if (url) {
+          window.location.href = url;
+        }
+      };
+
+      const isTypingTarget = (target) => {
+        if (!(target instanceof HTMLElement)) return false;
+
+        return (
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+          target.isContentEditable
+        );
+      };
+
+      document.addEventListener('keydown', (event) => {
+        if (
+          event.defaultPrevented ||
+          isTypingTarget(event.target)
+        ) {
+          return;
+        }
+
+        if (event.key === 'ArrowLeft') {
+          go(previousUrl);
+        }
+
+        if (event.key === 'ArrowRight') {
+          go(nextUrl);
+        }
+      });
+
+      document.addEventListener(
+        'touchstart',
+        (event) => {
+          if (event.touches.length !== 1) return;
+
+          startX = event.touches[0].clientX;
+          startY = event.touches[0].clientY;
+        },
+        { passive: true }
+      );
+
+      document.addEventListener(
+        'touchend',
+        (event) => {
+          if (
+            startX === null ||
+            startY === null ||
+            event.changedTouches.length !== 1
+          ) {
+            return;
+          }
+
+          const endX = event.changedTouches[0].clientX;
+          const endY = event.changedTouches[0].clientY;
+
+          const dx = endX - startX;
+          const dy = endY - startY;
+
+          startX = null;
+          startY = null;
+
+          if (
+            Math.abs(dx) < 60 ||
+            Math.abs(dx) <= Math.abs(dy) * 1.2
+          ) {
+            return;
+          }
+
+          go(dx < 0 ? nextUrl : previousUrl);
+        },
+        { passive: true }
+      );
+    })();
+  </script>
+</BaseLayout>
+
+<style>
+  .ritual-page {
+    width: min(100% - 2rem, 1000px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 5rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 12vw, 10rem);
+  }
+
+  .ritual {
+    width: min(100%, 720px);
+    margin: 0 auto;
+  }
+
+  .ritual__header {
+    margin-bottom: clamp(4rem, 10vw, 8rem);
+    text-align: center;
+  }
+
+  .ritual__header h1 {
+    margin: .8rem 0 1.2rem;
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 11vw, 9rem);
+    font-weight: 400;
+    line-height: .88;
+    letter-spacing: -.02em;
+  }
+
+  .ritual__description {
+    max-width: 34rem;
+    margin: 0 auto;
+    opacity: .58;
+    font-size: .95rem;
+    line-height: 1.55;
+  }
+
+  .ritual__body {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.2vw, 1.55rem);
+    line-height: 1.75;
+  }
+
+  .ritual__body :global(p) {
+    margin: 0 0 1.7em;
+  }
+
+  .ritual__body :global(h2) {
+    margin: 3.5em 0 1em;
+    font-size: 1.7em;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .ritual__body :global(h3) {
+    margin: 3em 0 1em;
+    font-size: 1.35em;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .ritual__body :global(blockquote) {
+    margin: 3rem 0;
+    padding-left: 1.5rem;
+    border-left: 1px solid var(--forest, currentColor);
+    font-size: 1.1em;
+    line-height: 1.5;
+  }
+
+  .ritual__body :global(em) {
+    font-style: italic;
+  }
+
+  .ritual__body :global(strong) {
+    font-weight: 500;
+  }
+
+  .ritual__body :global(img) {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    margin: 3.5rem 0;
+  }
+
+  .ritual-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: end;
+    margin-top: clamp(6rem, 14vw, 10rem);
+    padding-top: 1.25rem;
+    border-top: 1px solid color-mix(
+      in srgb,
+      currentColor 14%,
+      transparent
+    );
+  }
+
+  .ritual-nav__link {
+    display: grid;
+    gap: .35rem;
+    max-width: 14rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .ritual-nav__link strong {
+    font-family: var(--font-display);
+    font-size: 1.2rem;
+    font-weight: 400;
+    line-height: 1.05;
+  }
+
+  .ritual-nav__link--next {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .ritual-nav__link:hover strong,
+  .ritual-nav__link:focus-visible strong {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .ritual-nav__count {
+    align-self: center;
+    opacity: .45;
+    font-size: .7rem;
+    white-space: nowrap;
+  }
+
+  .ritual-nav__spacer {
+    min-height: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .ritual__header {
+      text-align: left;
+    }
+
+    .ritual__description {
+      margin-left: 0;
+    }
+
+    .ritual-nav {
+      gap: .6rem;
+    }
+
+    .ritual-nav__link {
+      max-width: 8.5rem;
+    }
+
+    .ritual-nav__link strong {
+      font-size: 1rem;
+    }
+
+    .ritual-nav__count {
+      font-size: .62rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+</style>
