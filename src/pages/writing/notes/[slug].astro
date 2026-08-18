@@ -3,11 +3,16 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { withBase } from '../../../lib/site';
 import { getCollection, render } from 'astro:content';
 
-const monthOrder = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+const monthOrder = [
+  'january','february','march','april','may','june',
+  'july','august','september','october','november','december'
+];
 
-function noteSortValue(entry) {
+function sortKey(entry) {
   const year = entry.data.year ?? entry.data.date?.getFullYear() ?? 0;
-  const month = entry.data.month ?? (entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january');
+  const month = entry.data.month ?? (
+    entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january'
+  );
   return {
     year,
     monthIndex: monthOrder.indexOf(month),
@@ -19,8 +24,9 @@ export async function getStaticPaths() {
   const notes = await getCollection('notes');
 
   const sorted = [...notes].sort((a, b) => {
-    const av = noteSortValue(a);
-    const bv = noteSortValue(b);
+    const av = sortKey(a);
+    const bv = sortKey(b);
+
     if (bv.year !== av.year) return bv.year - av.year;
     if (bv.monthIndex !== av.monthIndex) return bv.monthIndex - av.monthIndex;
     return bv.id.localeCompare(av.id);
@@ -39,12 +45,16 @@ export async function getStaticPaths() {
 }
 
 const { entry, position, total, previous, next } = Astro.props;
+
 const year = entry.data.year ?? entry.data.date?.getFullYear() ?? 0;
-const month = entry.data.month ?? (entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january');
+const month = entry.data.month ?? (
+  entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january'
+);
+
+const previousUrl = previous ? withBase(`/writing/notes/${previous.id}/`) : '';
+const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : '';
+
 const { Content } = await render(entry);
-const monthLabel = month.toUpperCase();
-const previousUrl = previous ? withBase(`/writing/notes/${previous.id}/`) : null;
-const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
 ---
 
 <BaseLayout title={`${entry.data.title} · Notes App · sid !!!`} description={entry.data.title}>
@@ -53,7 +63,7 @@ const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
 
     <article class="note" aria-label={`Note ${position + 1} of ${total}`}>
       <header class="note__header">
-        <p class="mono">notes app / {monthLabel} {year}</p>
+        <p class="mono">notes app / {month.toUpperCase()} {year}</p>
         <h1>{entry.data.title}</h1>
 
         {entry.data.context && (
@@ -66,9 +76,16 @@ const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
         )}
       </header>
 
-      <div class="note__body"><Content /></div>
+      <div class="note__body">
+        <Content />
+      </div>
 
-      <nav class="note-nav" aria-label="Note navigation">
+      <nav
+        class="note-nav"
+        aria-label="Note navigation"
+        data-previous-url={previousUrl}
+        data-next-url={nextUrl}
+      >
         {previous ? (
           <a class="note-nav__link note-nav__link--previous" href={previousUrl}>
             <span class="mono">← previous</span>
@@ -78,7 +95,9 @@ const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
           <span class="note-nav__spacer" aria-hidden="true"></span>
         )}
 
-        <span class="note-nav__count mono">{String(position + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
+        <span class="note-nav__count mono">
+          {String(position + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
+        </span>
 
         {next ? (
           <a class="note-nav__link note-nav__link--next" href={nextUrl}>
@@ -92,8 +111,14 @@ const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
     </article>
   </main>
 
-  <script is:inline define:vars={{ previousUrl, nextUrl }}>
+  <script is:inline>
     (() => {
+      const nav = document.querySelector('.note-nav');
+      if (!nav) return;
+
+      const previousUrl = nav.getAttribute('data-previous-url') || '';
+      const nextUrl = nav.getAttribute('data-next-url') || '';
+
       let startX = null;
       let startY = null;
 
@@ -103,11 +128,13 @@ const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
 
       const isTypingTarget = (target) => {
         if (!(target instanceof HTMLElement)) return false;
-        return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+        return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+          || target.isContentEditable;
       };
 
       document.addEventListener('keydown', (event) => {
         if (event.defaultPrevented || isTypingTarget(event.target)) return;
+
         if (event.key === 'ArrowLeft') go(previousUrl);
         if (event.key === 'ArrowRight') go(nextUrl);
       });
@@ -119,7 +146,11 @@ const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
       }, { passive: true });
 
       document.addEventListener('touchend', (event) => {
-        if (startX === null || startY === null || event.changedTouches.length !== 1) return;
+        if (
+          startX === null ||
+          startY === null ||
+          event.changedTouches.length !== 1
+        ) return;
 
         const endX = event.changedTouches[0].clientX;
         const endY = event.changedTouches[0].clientY;
@@ -130,6 +161,7 @@ const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
         startY = null;
 
         if (Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy) * 1.2) return;
+
         go(dx < 0 ? nextUrl : previousUrl);
       }, { passive: true });
     })();
