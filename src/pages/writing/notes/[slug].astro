@@ -3,43 +3,276 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { withBase } from '../../../lib/site';
 import { getCollection, render } from 'astro:content';
 
-export async function getStaticPaths() {
-  const notes = await getCollection('notes');
-  return notes.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+const monthOrder = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+
+function noteSortValue(entry) {
+  const year = entry.data.year ?? entry.data.date?.getFullYear() ?? 0;
+  const month = entry.data.month ?? (entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january');
+  return {
+    year,
+    monthIndex: monthOrder.indexOf(month),
+    id: entry.id,
+  };
 }
 
-const { entry } = Astro.props;
-const monthOrder = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+export async function getStaticPaths() {
+  const notes = await getCollection('notes');
+
+  const sorted = [...notes].sort((a, b) => {
+    const av = noteSortValue(a);
+    const bv = noteSortValue(b);
+    if (bv.year !== av.year) return bv.year - av.year;
+    if (bv.monthIndex !== av.monthIndex) return bv.monthIndex - av.monthIndex;
+    return bv.id.localeCompare(av.id);
+  });
+
+  return sorted.map((entry, index) => ({
+    params: { slug: entry.id },
+    props: {
+      entry,
+      position: index,
+      total: sorted.length,
+      previous: sorted[index + 1] ?? null,
+      next: sorted[index - 1] ?? null,
+    },
+  }));
+}
+
+const { entry, position, total, previous, next } = Astro.props;
 const year = entry.data.year ?? entry.data.date?.getFullYear() ?? 0;
 const month = entry.data.month ?? (entry.data.date ? monthOrder[entry.data.date.getMonth()] : 'january');
 const { Content } = await render(entry);
+const monthLabel = month.toUpperCase();
+const previousUrl = previous ? withBase(`/writing/notes/${previous.id}/`) : null;
+const nextUrl = next ? withBase(`/writing/notes/${next.id}/`) : null;
 ---
+
 <BaseLayout title={`${entry.data.title} · Notes App · sid !!!`} description={entry.data.title}>
   <main class="note-page">
     <a class="back-link" href={withBase('/writing/notes/')}>← notes app</a>
-    <article class="note">
+
+    <article class="note" aria-label={`Note ${position + 1} of ${total}`}>
       <header class="note__header">
-        <p class="mono">notes app / {month.toUpperCase()} {year}</p>
+        <p class="mono">notes app / {monthLabel} {year}</p>
         <h1>{entry.data.title}</h1>
+
         {entry.data.context && (
-          <a class="note__context" href={`${withBase('/writing/notes/')}?context=${encodeURIComponent(entry.data.context)}`}>
+          <a
+            class="note__context"
+            href={`${withBase('/writing/notes/')}?context=${encodeURIComponent(entry.data.context)}`}
+          >
             {entry.data.context}
           </a>
         )}
       </header>
+
       <div class="note__body"><Content /></div>
+
+      <nav class="note-nav" aria-label="Note navigation">
+        {previous ? (
+          <a class="note-nav__link note-nav__link--previous" href={previousUrl}>
+            <span class="mono">← previous</span>
+            <strong>{previous.data.title}</strong>
+          </a>
+        ) : (
+          <span class="note-nav__spacer" aria-hidden="true"></span>
+        )}
+
+        <span class="note-nav__count mono">{String(position + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</span>
+
+        {next ? (
+          <a class="note-nav__link note-nav__link--next" href={nextUrl}>
+            <span class="mono">next →</span>
+            <strong>{next.data.title}</strong>
+          </a>
+        ) : (
+          <span class="note-nav__spacer" aria-hidden="true"></span>
+        )}
+      </nav>
     </article>
   </main>
+
+  <script is:inline define:vars={{ previousUrl, nextUrl }}>
+    (() => {
+      let startX = null;
+      let startY = null;
+
+      const go = (url) => {
+        if (url) window.location.href = url;
+      };
+
+      const isTypingTarget = (target) => {
+        if (!(target instanceof HTMLElement)) return false;
+        return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+      };
+
+      document.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented || isTypingTarget(event.target)) return;
+        if (event.key === 'ArrowLeft') go(previousUrl);
+        if (event.key === 'ArrowRight') go(nextUrl);
+      });
+
+      document.addEventListener('touchstart', (event) => {
+        if (event.touches.length !== 1) return;
+        startX = event.touches[0].clientX;
+        startY = event.touches[0].clientY;
+      }, { passive: true });
+
+      document.addEventListener('touchend', (event) => {
+        if (startX === null || startY === null || event.changedTouches.length !== 1) return;
+
+        const endX = event.changedTouches[0].clientX;
+        const endY = event.changedTouches[0].clientY;
+        const dx = endX - startX;
+        const dy = endY - startY;
+
+        startX = null;
+        startY = null;
+
+        if (Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy) * 1.2) return;
+        go(dx < 0 ? nextUrl : previousUrl);
+      }, { passive: true });
+    })();
+  </script>
 </BaseLayout>
+
 <style>
-.note-page{width:min(100% - 2rem,920px);margin:0 auto;padding:clamp(2rem,5vw,5rem) 0 7rem}
-.back-link{display:inline-block;margin-bottom:clamp(4rem,12vw,10rem)}
-.note{width:min(100%,650px);margin:0 auto}
-.note__header{margin-bottom:clamp(3rem,7vw,5.5rem)}
-.note__header h1{margin:.65rem 0 1rem;font-family:var(--font-display);font-size:clamp(3rem,8vw,6.5rem);font-weight:400;line-height:.92}
-.note__context{display:inline-block;color:inherit;font-size:.82rem;opacity:.42;text-decoration:none;border-bottom:1px solid transparent}
-.note__context:hover,.note__context:focus-visible{opacity:.8;border-color:currentColor}
-.note__body{font-size:clamp(1.05rem,2vw,1.22rem);line-height:1.8}
-.note__body :global(p){margin:0 0 1.6em}
-.note__body :global(blockquote){margin:2.5rem 0;padding-left:1.25rem;border-left:1px solid var(--forest,currentColor);font-family:var(--font-display);font-size:1.45em;line-height:1.35}
+  .note-page {
+    width: min(100% - 2rem, 920px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 4rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 12vw, 10rem);
+  }
+
+  .note {
+    width: min(100%, 650px);
+    margin: 0 auto;
+  }
+
+  .note__header {
+    margin-bottom: clamp(3rem, 7vw, 5.5rem);
+  }
+
+  .note__header h1 {
+    margin: .65rem 0 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 400;
+    line-height: .92;
+  }
+
+  .note__context {
+    display: inline-block;
+    color: inherit;
+    font-size: .82rem;
+    opacity: .42;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+
+  .note__context:hover,
+  .note__context:focus-visible {
+    opacity: .8;
+    border-color: currentColor;
+  }
+
+  .note__body {
+    font-size: clamp(1.05rem, 2vw, 1.22rem);
+    line-height: 1.8;
+  }
+
+  .note__body :global(p) {
+    margin: 0 0 1.6em;
+  }
+
+  .note__body :global(blockquote) {
+    margin: 2.5rem 0;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--forest, currentColor);
+    font-family: var(--font-display);
+    font-size: 1.45em;
+    line-height: 1.35;
+  }
+
+  .note__body :global(img) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 2.5rem 0;
+  }
+
+  .note-nav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: end;
+    margin-top: clamp(5rem, 12vw, 8rem);
+    padding-top: 1.25rem;
+    border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  }
+
+  .note-nav__link {
+    display: grid;
+    gap: .35rem;
+    max-width: 13rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .note-nav__link strong {
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 400;
+    line-height: 1.05;
+  }
+
+  .note-nav__link--next {
+    justify-self: end;
+    text-align: right;
+  }
+
+  .note-nav__link:hover strong,
+  .note-nav__link:focus-visible strong {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .note-nav__count {
+    align-self: center;
+    opacity: .45;
+    font-size: .7rem;
+    white-space: nowrap;
+  }
+
+  .note-nav__spacer {
+    min-height: 2rem;
+  }
+
+  @media (max-width: 700px) {
+    .note-nav {
+      gap: .6rem;
+    }
+
+    .note-nav__link {
+      max-width: 8.5rem;
+    }
+
+    .note-nav__link strong {
+      font-size: 1rem;
+    }
+
+    .note-nav__count {
+      font-size: .62rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
 </style>
