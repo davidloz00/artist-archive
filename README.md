@@ -1,20 +1,5 @@
-# Playlist series system
+# Playlist: august 2026
 
-This patch adds structured playlist-series metadata without turning year into a redundant tag.
+Adds the first real playlist entry and guarantees the full Playlist Meaning remains readable without truncation, clipping, or ellipsis.
 
-For the recurring monthly playlists, use:
-
-```yaml
-series: monthly
-month: august
-```
-
-The site then treats:
-- year = archive organization
-- series = recurring series identity
-- month = calendar/month browsing
-- tags = mood/context (night, driving, drawing, rain, etc.)
-
-Random/non-series playlists simply omit `series` and `month` and can keep using freeform `tags`.
-
-Upload `src/content.config.ts` and `src/pages/playlists/index.astro` to the repository, preserving the rest of the current site. This patch assumes the current Astro Content Layer format with `astro/loaders`.
+Upload the `src` folder to the repository and commit directly to `main`.

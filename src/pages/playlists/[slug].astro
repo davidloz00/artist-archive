@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { withBase } from '../../lib/site';
 import PlaylistEmbed from '../../components/playlists/PlaylistEmbed.astro';
+import '../../styles/playlist-entry.css';
 
 export async function getStaticPaths() {
   const playlists = await getCollection('playlists');
@@ -50,7 +51,7 @@ const archiveNumber = data.number ? String(data.number).padStart(3, '0') : undef
 
         <div class="playlist-meaning">
           <p class="mono playlist-note__label">playlist meaning</p>
-          <div class="prose"><Content /></div>
+          <div class="prose playlist-meaning__content"><Content /></div>
         </div>
 
         {data.tags.length > 0 && (

@@ -1,0 +1,13 @@
+/* Playlist writing should always reveal the full story. */
+.playlist-meaning__content {
+  max-height: none;
+  height: auto;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.playlist-meaning__content p {
+  max-height: none;
+  overflow: visible;
+}
