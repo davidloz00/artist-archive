@@ -8,12 +8,11 @@ const [notes, rituals, essays] = await Promise.all([
   getCollection('rituals'),
   getCollection('blog')
 ]);
-
 const sortedNotes = [...notes].sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
 const sortedRituals = [...rituals].sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0));
 const essay = essays[0];
 ---
-<BaseLayout title="Writing · Artist Archive" description="Essays, Notes App, and Rituals.">
+<BaseLayout title="Writing · sid !!!" description="Essays, Notes App, and Rituals.">
   <div class="writing-page">
     <header class="writing-header">
       <p class="mono">writing</p>
@@ -35,17 +34,18 @@ const essay = essays[0];
     <section class="writing-section" aria-labelledby="notes-title">
       <div>
         <p class="mono">02</p>
-        <h2 id="notes-title">notes app</h2>
+        <h2 id="notes-title"><a href={withBase('/writing/notes/')}>notes app</a></h2>
         <p class="writing-kicker">fragments, quotes, observations, things worth remembering</p>
       </div>
       <div class="writing-list">
-        {sortedNotes.map((note, index) => (
+        {sortedNotes.slice(0, 5).map((note, index) => (
           <a class="writing-list__row" href={withBase(`/writing/notes/${note.id}/`)}>
-            <span>{String( sortedNotes.length - index ).padStart(2, '0')}</span>
+            <span>{String(sortedNotes.length - index).padStart(2, '0')}</span>
             <strong>{note.data.title}</strong>
             <small>{note.data.date ? note.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</small>
           </a>
         ))}
+        <a class="text-link" href={withBase('/writing/notes/')}>all notes →</a>
       </div>
     </section>
 

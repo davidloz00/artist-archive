@@ -11,14 +11,84 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 ---
-<BaseLayout title={`${entry.data.title} · Notes App`} description={entry.data.title}>
-  <div class="reading-page notes-reading">
-    <a class="back-link" href={withBase('/writing/')}>← writing</a>
-    <header class="reading-header">
-      <p class="mono">notes app / {entry.data.date ? entry.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}</p>
-      <h1>{entry.data.title}</h1>
-      {entry.data.context && <p class="reading-context">{entry.data.context}</p>}
-    </header>
-    <article class="reading-content"><Content /></article>
-  </div>
+<BaseLayout title={`${entry.data.title} · Notes App · sid !!!`} description={entry.data.title}>
+  <main class="note-page">
+    <a class="back-link" href={withBase('/writing/notes/')}>← notes app</a>
+
+    <article class="note">
+      <header class="note__header">
+        <p class="mono">
+          notes app
+          {entry.data.date && <> / {entry.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</>}
+        </p>
+        <h1>{entry.data.title}</h1>
+        {entry.data.context && <p class="note__context">{entry.data.context}</p>}
+      </header>
+
+      <div class="note__body">
+        <Content />
+      </div>
+    </article>
+  </main>
 </BaseLayout>
+
+<style>
+  .note-page {
+    width: min(100% - 2rem, 920px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 7rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 12vw, 10rem);
+  }
+
+  .note {
+    width: min(100%, 650px);
+    margin: 0 auto;
+  }
+
+  .note__header {
+    margin-bottom: clamp(3rem, 7vw, 5.5rem);
+  }
+
+  .note__header h1 {
+    margin: .65rem 0 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 6.5rem);
+    font-weight: 400;
+    line-height: .92;
+  }
+
+  .note__context {
+    margin: 0;
+    max-width: 30rem;
+    opacity: .58;
+  }
+
+  .note__body {
+    font-size: clamp(1.05rem, 2vw, 1.22rem);
+    line-height: 1.8;
+  }
+
+  .note__body :global(p) {
+    margin: 0 0 1.6em;
+  }
+
+  .note__body :global(blockquote) {
+    margin: 2.5rem 0;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--forest, currentColor);
+    font-family: var(--font-display);
+    font-size: 1.45em;
+    line-height: 1.35;
+  }
+
+  .note__body :global(img) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 2.5rem 0;
+  }
+</style>
