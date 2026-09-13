@@ -16,18 +16,27 @@ const groups = [...new Set(
 )].sort((a, b) => b - a);
 
 const dumpEntries = entries
-  .filter((entry) => (entry.data.media?.length ?? 0) > 0)
   .map((entry) => ({
     id: entry.id,
     title: entry.data.title,
     year: entry.data.year ?? entry.data.date?.getFullYear() ?? null,
     type: entry.data.type,
     description: entry.data.description ?? '',
-    media: entry.data.media ?? []
-  }));
+    media: (entry.data.media ?? []).map((item) => ({
+      ...item,
+      src:
+        item.src.startsWith('/') && !item.src.startsWith('//')
+          ? withBase(item.src)
+          : item.src,
+    })),
+  }))
+  .filter((entry) => entry.media.length > 0);
 ---
 
-<BaseLayout title="Projects · sid !!!" description="Work in progress, experiments, logs, fragments, and things worth keeping.">
+<BaseLayout
+  title="Projects · sid !!!"
+  description="Work in progress, experiments, logs, fragments, and things worth keeping."
+>
   <main class="projects-page">
     <a class="back-link" href={withBase('/')}>← home</a>
 
@@ -36,39 +45,79 @@ const dumpEntries = entries
         <p class="mono">archive</p>
         <h1>projects</h1>
       </div>
-      <p class="projects-intro">work in progress, experiments, logs, fragments, and things worth keeping.</p>
+
+      <p class="projects-intro">
+        work in progress, experiments, logs, fragments, and things worth keeping.
+      </p>
     </header>
 
     {groups.map((year) => (
       <section class="projects-year" aria-labelledby={`year-${year}`}>
         <h2 id={`year-${year}`} class="mono">{year}</h2>
+
         <div class="projects-list">
-          {entries.filter((entry) => (entry.data.year ?? entry.data.date?.getFullYear()) === year).map((entry, index) => (
-            <a
-              class="project-row"
-              href={withBase(`/projects/${entry.id}/`)}
-              data-project-id={entry.id}
-              data-has-media={(entry.data.media?.length ?? 0) > 0 ? 'true' : 'false'}
-            >
-              <span class="project-row__index mono">{String(index + 1).padStart(2, '0')}</span>
-              <div class="project-row__main">
-                <h3>{entry.data.title}</h3>
-                {entry.data.description && <p>{entry.data.description}</p>}
-              </div>
-              <span class="project-row__type mono">{entry.data.type}</span>
-              <span class="project-row__arrow" aria-hidden="true">↗</span>
-            </a>
-          ))}
+          {entries
+            .filter(
+              (entry) =>
+                (entry.data.year ?? entry.data.date?.getFullYear()) === year
+            )
+            .map((entry, index) => {
+              const hasMedia = (entry.data.media?.length ?? 0) > 0;
+
+              return (
+                <a
+                  class="project-row"
+                  href={withBase(`/projects/${entry.id}/`)}
+                  data-project-id={entry.id}
+                  data-has-media={hasMedia ? 'true' : 'false'}
+                >
+                  <span class="project-row__index mono">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+
+                  <div class="project-row__main">
+                    <h3>{entry.data.title}</h3>
+
+                    {entry.data.description && (
+                      <p>{entry.data.description}</p>
+                    )}
+                  </div>
+
+                  <span class="project-row__type mono">
+                    {entry.data.type}
+                  </span>
+
+                  <span class="project-row__arrow" aria-hidden="true">
+                    ↗
+                  </span>
+                </a>
+              );
+            })}
         </div>
       </section>
     ))}
   </main>
 
   {dumpEntries.length > 0 && (
-    <div class="dump-lightbox" id="dump-lightbox" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Project media viewer">
+    <div
+      class="dump-lightbox"
+      id="dump-lightbox"
+      aria-hidden="true"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Project media viewer"
+    >
       <div class="dump-lightbox__wash" data-close-lightbox></div>
+
       <div class="dump-lightbox__shell">
-        <button class="dump-lightbox__close" type="button" aria-label="Close" data-close-lightbox>×</button>
+        <button
+          class="dump-lightbox__close"
+          type="button"
+          aria-label="Close"
+          data-close-lightbox
+        >
+          ×
+        </button>
 
         <header class="dump-lightbox__header">
           <div>
@@ -76,15 +125,32 @@ const dumpEntries = entries
             <h2 id="dump-lightbox-title"></h2>
             <p id="dump-lightbox-description"></p>
           </div>
+
           <span class="dump-lightbox__counter mono" id="dump-lightbox-counter"></span>
         </header>
 
-        <button class="dump-lightbox__arrow dump-lightbox__arrow--left" type="button" aria-label="Previous" data-direction="previous">←</button>
+        <button
+          class="dump-lightbox__arrow dump-lightbox__arrow--left"
+          type="button"
+          aria-label="Previous"
+          data-direction="previous"
+        >
+          ←
+        </button>
+
         <div class="dump-lightbox__media-wrap">
           <div class="dump-lightbox__media" id="dump-lightbox-media"></div>
           <p class="dump-lightbox__caption" id="dump-lightbox-caption"></p>
         </div>
-        <button class="dump-lightbox__arrow dump-lightbox__arrow--right" type="button" aria-label="Next" data-direction="next">→</button>
+
+        <button
+          class="dump-lightbox__arrow dump-lightbox__arrow--right"
+          type="button"
+          aria-label="Next"
+          data-direction="next"
+        >
+          →
+        </button>
       </div>
     </div>
   )}
@@ -98,22 +164,31 @@ const dumpEntries = entries
       const counter = document.querySelector('#dump-lightbox-counter');
       const mediaHost = document.querySelector('#dump-lightbox-media');
       const caption = document.querySelector('#dump-lightbox-caption');
+
       if (!lightbox || !mediaHost) return;
 
       const projects = dumpEntries;
+      const rows = [...document.querySelectorAll('[data-project-id]')];
+
       let activeProject = null;
       let activeIndex = 0;
       let startX = null;
       let startY = null;
 
+      const projectFromId = (id) =>
+        projects.find((project) => project.id === id);
+
       const open = (id) => {
-        const project = projects.find((item) => item.id === id);
+        const project = projectFromId(id);
         if (!project || !project.media?.length) return;
+
         activeProject = project;
         activeIndex = 0;
+
         lightbox.classList.add('is-open');
         lightbox.setAttribute('aria-hidden', 'false');
         document.body.classList.add('lightbox-open');
+
         render();
       };
 
@@ -127,131 +202,518 @@ const dumpEntries = entries
 
       const render = () => {
         if (!activeProject) return;
+
         const item = activeProject.media[activeIndex];
         const total = activeProject.media.length;
-        meta.textContent = `${activeProject.type} / ${activeProject.year ?? ''}`.trim();
+
+        meta.textContent =
+          `${activeProject.type} / ${activeProject.year ?? ''}`.trim();
+
         title.textContent = activeProject.title;
         description.textContent = activeProject.description || '';
         description.hidden = !activeProject.description;
-        counter.textContent = `${String(activeIndex + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+
+        counter.textContent =
+          `${String(activeIndex + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}`;
+
         mediaHost.replaceChildren();
+
+        const src = item.src || '';
+        const alt = item.alt || activeProject.title || 'Project media';
 
         if (item.type === 'video') {
           const video = document.createElement('video');
-          video.src = item.src;
+
+          video.src = src;
           video.controls = true;
           video.playsInline = true;
           video.preload = 'metadata';
+
           mediaHost.appendChild(video);
         } else {
           const img = document.createElement('img');
-          img.src = item.src;
-          img.alt = item.alt || activeProject.title || 'Project media';
+
+          img.src = src;
+          img.alt = alt;
           img.loading = 'eager';
+
           mediaHost.appendChild(img);
         }
 
         caption.textContent = item.caption || '';
         caption.hidden = !item.caption;
+
+        const left = lightbox.querySelector(
+          '[data-direction="previous"]'
+        );
+
+        const right = lightbox.querySelector(
+          '[data-direction="next"]'
+        );
+
+        left.disabled = total <= 1;
+        right.disabled = total <= 1;
       };
 
       const step = (direction) => {
         if (!activeProject?.media?.length) return;
+
         const total = activeProject.media.length;
-        activeIndex = (activeIndex + direction + total) % total;
+
+        activeIndex =
+          (activeIndex + direction + total) % total;
+
         render();
       };
 
-      document.querySelectorAll('[data-project-id]').forEach((row) => {
+      rows.forEach((row) => {
         if (row.dataset.hasMedia !== 'true') return;
+
         row.addEventListener('click', (event) => {
           event.preventDefault();
           open(row.dataset.projectId);
         });
       });
 
-      lightbox.querySelectorAll('[data-close-lightbox]').forEach((element) => element.addEventListener('click', close));
-      lightbox.querySelectorAll('[data-direction]').forEach((button) => {
-        button.addEventListener('click', () => step(button.dataset.direction === 'next' ? 1 : -1));
-      });
+      lightbox
+        .querySelectorAll('[data-close-lightbox]')
+        .forEach((element) => {
+          element.addEventListener('click', close);
+        });
+
+      lightbox
+        .querySelectorAll('[data-direction]')
+        .forEach((button) => {
+          button.addEventListener('click', () => {
+            step(
+              button.dataset.direction === 'next'
+                ? 1
+                : -1
+            );
+          });
+        });
 
       document.addEventListener('keydown', (event) => {
         if (!lightbox.classList.contains('is-open')) return;
-        if (event.key === 'Escape') close();
-        if (event.key === 'ArrowLeft') { event.preventDefault(); step(-1); }
-        if (event.key === 'ArrowRight') { event.preventDefault(); step(1); }
+
+        if (event.key === 'Escape') {
+          close();
+          return;
+        }
+
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          step(-1);
+        }
+
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          step(1);
+        }
       });
 
-      lightbox.addEventListener('touchstart', (event) => {
-        if (event.touches.length !== 1) return;
-        startX = event.touches[0].clientX;
-        startY = event.touches[0].clientY;
-      }, { passive: true });
+      lightbox.addEventListener(
+        'touchstart',
+        (event) => {
+          if (event.touches.length !== 1) return;
 
-      lightbox.addEventListener('touchend', (event) => {
-        if (startX === null || startY === null || event.changedTouches.length !== 1) return;
-        const dx = event.changedTouches[0].clientX - startX;
-        const dy = event.changedTouches[0].clientY - startY;
-        startX = null;
-        startY = null;
-        if (Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy) * 1.2) return;
-        step(dx < 0 ? 1 : -1);
-      }, { passive: true });
+          startX = event.touches[0].clientX;
+          startY = event.touches[0].clientY;
+        },
+        { passive: true }
+      );
+
+      lightbox.addEventListener(
+        'touchend',
+        (event) => {
+          if (
+            startX === null ||
+            startY === null ||
+            event.changedTouches.length !== 1
+          ) {
+            return;
+          }
+
+          const endX = event.changedTouches[0].clientX;
+          const endY = event.changedTouches[0].clientY;
+
+          const dx = endX - startX;
+          const dy = endY - startY;
+
+          startX = null;
+          startY = null;
+
+          if (
+            Math.abs(dx) < 60 ||
+            Math.abs(dx) <= Math.abs(dy) * 1.2
+          ) {
+            return;
+          }
+
+          step(dx < 0 ? 1 : -1);
+        },
+        { passive: true }
+      );
     })();
   </script>
 </BaseLayout>
 
 <style>
-  .projects-page { width:min(100% - 2rem,1080px); margin:0 auto; padding:clamp(2rem,5vw,5rem) 0 7rem; }
-  .back-link { display:inline-block; margin-bottom:clamp(4rem,10vw,8rem); color:inherit; text-decoration:none; }
-  .back-link:hover,.back-link:focus-visible { text-decoration:underline; text-underline-offset:.16em; }
-  .projects-header { display:flex; align-items:end; justify-content:space-between; gap:3rem; padding-bottom:1.25rem; border-bottom:1px solid color-mix(in srgb,currentColor 16%,transparent); }
-  .projects-header h1 { margin:.2rem 0 0; font-family:var(--font-display); font-size:clamp(4rem,11vw,9rem); font-weight:400; line-height:.88; }
-  .projects-intro { max-width:26rem; margin:0 0 .4rem; line-height:1.5; opacity:.58; }
-  .projects-year { display:grid; grid-template-columns:minmax(5rem,10rem) 1fr; gap:2rem; padding:1.5rem 0 4rem; border-top:1px solid color-mix(in srgb,currentColor 12%,transparent); margin-top:clamp(4rem,8vw,7rem); }
-  .projects-year h2 { margin:.45rem 0 0; font-size:.78rem; font-weight:400; }
-  .projects-list { display:grid; }
-  .project-row { display:grid; grid-template-columns:2.5rem minmax(0,1fr) auto 2rem; gap:1rem; align-items:start; padding:1.1rem 0; color:inherit; text-decoration:none; border-bottom:1px solid color-mix(in srgb,currentColor 10%,transparent); transition:transform 180ms ease; }
-  .project-row:hover,.project-row:focus-visible { transform:translateX(.45rem); }
-  .project-row__index { padding-top:.3rem; font-size:.68rem; opacity:.4; }
-  .project-row__main h3 { margin:0; font-family:var(--font-display); font-size:clamp(1.8rem,4vw,3.5rem); font-weight:400; line-height:.95; }
-  .project-row__main p { max-width:38rem; margin:.55rem 0 0; font-size:.88rem; line-height:1.5; opacity:.55; }
-  .project-row__type { padding-top:.35rem; font-size:.66rem; opacity:.38; white-space:nowrap; }
-  .project-row__arrow { padding-top:.15rem; font-size:1rem; opacity:.45; transition:transform 180ms ease; }
-  .project-row:hover .project-row__arrow,.project-row:focus-visible .project-row__arrow { transform:translate(.15rem,-.15rem); }
+  .projects-page {
+    width: min(100% - 2rem, 1080px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 7rem;
+  }
 
-  .dump-lightbox { position:fixed; inset:0; z-index:1000; display:none; }
-  .dump-lightbox.is-open { display:block; }
-  .dump-lightbox__wash { position:absolute; inset:0; background:color-mix(in srgb,currentColor 18%,transparent); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); cursor:pointer; }
-  .dump-lightbox__shell { position:relative; z-index:1; display:grid; grid-template-columns:minmax(4rem,1fr) minmax(0,760px) minmax(4rem,1fr); grid-template-rows:auto minmax(0,1fr) auto; gap:1rem; width:min(100% - 2rem,1280px); height:100%; margin:0 auto; padding:1.5rem 0 2rem; pointer-events:none; }
-  .dump-lightbox__shell > * { pointer-events:auto; }
-  .dump-lightbox__close { position:absolute; top:1rem; right:0; z-index:2; width:2.25rem; height:2.25rem; border:0; background:transparent; color:inherit; font:2rem/1 Arial,sans-serif; cursor:pointer; }
-  .dump-lightbox__header { grid-column:2; grid-row:1; display:flex; justify-content:space-between; align-items:start; gap:2rem; padding:.2rem 2.5rem .5rem 0; }
-  .dump-lightbox__header h2 { margin:.35rem 0 .45rem; font-family:var(--font-display); font-size:clamp(1.7rem,3vw,2.8rem); font-weight:400; line-height:.95; }
-  .dump-lightbox__header p { margin:0; max-width:34rem; opacity:.62; }
-  .dump-lightbox__eyebrow,.dump-lightbox__counter { font-size:.68rem; opacity:.5; white-space:nowrap; }
-  .dump-lightbox__media-wrap { grid-column:2; grid-row:2; display:grid; grid-template-rows:minmax(0,1fr) auto; min-height:0; align-items:center; }
-  .dump-lightbox__media { display:flex; align-items:center; justify-content:center; min-height:0; width:100%; height:100%; }
-  .dump-lightbox__media img,.dump-lightbox__media video { display:block; width:auto; max-width:100%; max-height:100%; object-fit:contain; border-radius:2px; }
-  .dump-lightbox__caption { margin:1rem 0 0; text-align:center; font-size:.88rem; opacity:.62; }
-  .dump-lightbox__arrow { align-self:center; justify-self:center; width:3rem; height:3rem; border:0; background:transparent; color:inherit; font-size:1.5rem; cursor:pointer; opacity:.65; }
-  .dump-lightbox__arrow:hover,.dump-lightbox__arrow:focus-visible { opacity:1; }
-  .dump-lightbox__arrow--left { grid-column:1; grid-row:2; }
-  .dump-lightbox__arrow--right { grid-column:3; grid-row:2; }
-  .lightbox-open { overflow:hidden; }
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 10vw, 8rem);
+    color: inherit;
+    text-decoration: none;
+  }
 
-  @media (max-width:760px) {
-    .projects-header { align-items:start; flex-direction:column; gap:1rem; }
-    .projects-intro { margin-bottom:0; }
-    .projects-year { grid-template-columns:1fr; gap:.75rem; }
-    .project-row { grid-template-columns:2rem minmax(0,1fr) 1.5rem; gap:.7rem; }
-    .project-row__type { grid-column:2; grid-row:2; padding-top:0; }
-    .project-row__arrow { grid-column:3; grid-row:1 / span 2; }
-    .dump-lightbox__shell { grid-template-columns:2.2rem minmax(0,1fr) 2.2rem; width:calc(100% - 1rem); padding-top:1rem; }
-    .dump-lightbox__header { padding-right:2rem; }
-    .dump-lightbox__header h2 { font-size:1.7rem; }
-    .dump-lightbox__header p { font-size:.82rem; }
-    .dump-lightbox__arrow { width:2rem; height:2rem; }
-    .dump-lightbox__caption { font-size:.82rem; padding:0 .5rem; }
+  .back-link:hover,
+  .back-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .projects-header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 3rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid color-mix(
+      in srgb,
+      currentColor 16%,
+      transparent
+    );
+  }
+
+  .projects-header h1 {
+    margin: .2rem 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 11vw, 9rem);
+    font-weight: 400;
+    line-height: .88;
+  }
+
+  .projects-intro {
+    max-width: 26rem;
+    margin: 0 0 .4rem;
+    line-height: 1.5;
+    opacity: .58;
+  }
+
+  .projects-year {
+    display: grid;
+    grid-template-columns: minmax(5rem, 10rem) 1fr;
+    gap: 2rem;
+    padding: 1.5rem 0 4rem;
+    border-top: 1px solid color-mix(
+      in srgb,
+      currentColor 12%,
+      transparent
+    );
+    margin-top: clamp(4rem, 8vw, 7rem);
+  }
+
+  .projects-year h2 {
+    margin: .45rem 0 0;
+    font-size: .78rem;
+    font-weight: 400;
+  }
+
+  .projects-list {
+    display: grid;
+  }
+
+  .project-row {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto 2rem;
+    gap: 1rem;
+    align-items: start;
+    padding: 1.1rem 0;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(
+      in srgb,
+      currentColor 10%,
+      transparent
+    );
+    transition: transform 180ms ease;
+  }
+
+  .project-row:hover,
+  .project-row:focus-visible {
+    transform: translateX(.45rem);
+  }
+
+  .project-row__index {
+    padding-top: .3rem;
+    font-size: .68rem;
+    opacity: .4;
+  }
+
+  .project-row__main h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 3.5rem);
+    font-weight: 400;
+    line-height: .95;
+  }
+
+  .project-row__main p {
+    max-width: 38rem;
+    margin: .55rem 0 0;
+    font-size: .88rem;
+    line-height: 1.5;
+    opacity: .55;
+  }
+
+  .project-row__type {
+    padding-top: .35rem;
+    font-size: .66rem;
+    opacity: .38;
+    white-space: nowrap;
+  }
+
+  .project-row__arrow {
+    padding-top: .15rem;
+    font-size: 1rem;
+    opacity: .45;
+    transition: transform 180ms ease;
+  }
+
+  .project-row:hover .project-row__arrow,
+  .project-row:focus-visible .project-row__arrow {
+    transform: translate(.15rem, -.15rem);
+  }
+
+  .dump-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: none;
+  }
+
+  .dump-lightbox.is-open {
+    display: block;
+  }
+
+  .dump-lightbox__wash {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, currentColor 18%, transparent);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    cursor: pointer;
+  }
+
+  .dump-lightbox__shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(4rem, 1fr) minmax(0, 760px) minmax(4rem, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 1rem;
+    width: min(100% - 2rem, 1280px);
+    height: 100%;
+    margin: 0 auto;
+    padding: 1.5rem 0 2rem;
+    pointer-events: none;
+  }
+
+  .dump-lightbox__shell > * {
+    pointer-events: auto;
+  }
+
+  .dump-lightbox__close {
+    position: absolute;
+    top: 1rem;
+    right: 0;
+    z-index: 2;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: 2rem/1 Arial, sans-serif;
+    cursor: pointer;
+  }
+
+  .dump-lightbox__header {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 2rem;
+    padding: .2rem 2.5rem 0 0;
+  }
+
+  .dump-lightbox__header h2 {
+    margin: .35rem 0 .45rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 3vw, 2.8rem);
+    font-weight: 400;
+    line-height: .95;
+  }
+
+  .dump-lightbox__header p {
+    margin: 0;
+    max-width: 34rem;
+    opacity: .62;
+  }
+
+  .dump-lightbox__eyebrow,
+  .dump-lightbox__counter {
+    font-size: .68rem;
+    opacity: .5;
+    white-space: nowrap;
+  }
+
+  .dump-lightbox__counter {
+    padding-top: .25rem;
+  }
+
+  .dump-lightbox__media-wrap {
+    grid-column: 2;
+    grid-row: 2;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+    align-items: center;
+  }
+
+  .dump-lightbox__media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .dump-lightbox__media img,
+  .dump-lightbox__media video {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 2px;
+  }
+
+  .dump-lightbox__caption {
+    margin: 1rem 0 0;
+    text-align: center;
+    font-size: .88rem;
+    opacity: .62;
+  }
+
+  .dump-lightbox__arrow {
+    align-self: center;
+    justify-self: center;
+    width: 3rem;
+    height: 3rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: .65;
+  }
+
+  .dump-lightbox__arrow:hover,
+  .dump-lightbox__arrow:focus-visible {
+    opacity: 1;
+  }
+
+  .dump-lightbox__arrow:disabled {
+    visibility: hidden;
+  }
+
+  .dump-lightbox__arrow--left {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .dump-lightbox__arrow--right {
+    grid-column: 3;
+    grid-row: 2;
+  }
+
+  .lightbox-open {
+    overflow: hidden;
+  }
+
+  @media (max-width: 760px) {
+    .projects-header {
+      align-items: start;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .projects-intro {
+      margin-bottom: 0;
+    }
+
+    .projects-year {
+      grid-template-columns: 1fr;
+      gap: .75rem;
+    }
+
+    .project-row {
+      grid-template-columns: 2rem minmax(0, 1fr) 1.5rem;
+      gap: .7rem;
+    }
+
+    .project-row__type {
+      grid-column: 2;
+      grid-row: 2;
+      padding-top: 0;
+    }
+
+    .project-row__arrow {
+      grid-column: 3;
+      grid-row: 1 / span 2;
+    }
+
+    .dump-lightbox__shell {
+      grid-template-columns: 2.2rem minmax(0, 1fr) 2.2rem;
+      width: calc(100% - 1rem);
+      padding-top: 1rem;
+    }
+
+    .dump-lightbox__header {
+      padding-right: 2rem;
+    }
+
+    .dump-lightbox__header h2 {
+      font-size: 1.7rem;
+    }
+
+    .dump-lightbox__header p {
+      font-size: .82rem;
+    }
+
+    .dump-lightbox__arrow {
+      width: 2rem;
+      height: 2rem;
+    }
+
+    .dump-lightbox__caption {
+      font-size: .82rem;
+      padding: 0 .5rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-row,
+    .project-row__arrow {
+      transition: none;
+    }
   }
 </style>
