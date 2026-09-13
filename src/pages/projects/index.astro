@@ -203,12 +203,26 @@ const dumpEntries = entries
           video.controls = true;
           video.playsInline = true;
           video.preload = 'metadata';
+
+          video.style.width = 'auto';
+          video.style.height = 'auto';
+          video.style.maxWidth = window.innerWidth < 760 ? '92vw' : '82vw';
+          video.style.maxHeight = window.innerWidth < 760 ? '74vh' : '80vh';
+          video.style.objectFit = 'contain';
+
           mediaHost.appendChild(video);
         } else {
           const img = document.createElement('img');
           img.src = src;
           img.alt = alt;
           img.loading = 'eager';
+
+          img.style.width = 'auto';
+          img.style.height = 'auto';
+          img.style.maxWidth = window.innerWidth < 760 ? '92vw' : '82vw';
+          img.style.maxHeight = window.innerWidth < 760 ? '74vh' : '80vh';
+          img.style.objectFit = 'contain';
+
           mediaHost.appendChild(img);
         }
 
