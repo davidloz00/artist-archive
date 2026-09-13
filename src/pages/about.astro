@@ -1,0 +1,222 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/site';
+
+const name = "sid";
+const location = "la";
+
+const bio = "take me to nyc or what else are you here for !";
+
+const instagram = "https://www.instagram.com/sid8world/";
+const tiktok = "https://www.tiktok.com/@sid8world";
+const spotify = "https://open.spotify.com/user/31xj55cey73so7qarqw4vpc54jvu?si=49562fe5c26148f7";
+const substack = "https://substack.com/@sidwindow";
+const youtube = "https://www.youtube.com/@sid8world";
+
+const elsewhere = [
+  ["instagram", instagram],
+  ["spotify", spotify],
+  ["substack", substack],
+  ["tiktok", tiktok],
+  ["youtube", youtube],
+];
+---
+
+<BaseLayout title="About · sid !!!" description="About sid.">
+  <main class="about-page">
+    <a class="back-link" href={withBase('/')}>← home</a>
+
+    <header class="about-header">
+      <span class="mono">about</span>
+      <h1>about</h1>
+    </header>
+
+    <section class="about-grid">
+      <figure class="about-photo">
+        <img
+          src={withBase('/images/about/sid.jpg')}
+          alt="sid"
+          loading="eager"
+        />
+      </figure>
+
+      <div class="about-copy">
+        <div class="about-identity">
+          <h2>{name}</h2>
+          <p class="about-location">{location}</p>
+        </div>
+
+        <p class="about-bio">{bio}</p>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <div class="about-label mono">elsewhere</div>
+
+      <nav class="elsewhere-list" aria-label="Elsewhere">
+        {elsewhere.map(([label, href]) => (
+          <a
+            class="elsewhere-link"
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span>{label}</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </nav>
+    </section>
+
+    <footer class="about-footer">
+      <span>sid !!!</span>
+      <span>{location}</span>
+    </footer>
+  </main>
+</BaseLayout>
+
+<style>
+  .about-page {
+    width: min(100% - 2rem, 1080px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 7rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 10vw, 8rem);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .back-link:hover,
+  .back-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .about-header {
+    display: grid;
+    gap: .35rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  }
+
+  .about-header h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 11vw, 9rem);
+    font-weight: 400;
+    line-height: .88;
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, .8fr) minmax(0, 1fr);
+    gap: clamp(3rem, 8vw, 8rem);
+    align-items: center;
+    padding: clamp(4rem, 9vw, 8rem) 0;
+  }
+
+  .about-photo {
+    margin: 0;
+  }
+
+  .about-photo img {
+    display: block;
+    width: 100%;
+    max-height: 700px;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  .about-copy {
+    max-width: 38rem;
+  }
+
+  .about-identity h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    font-weight: 400;
+    line-height: .9;
+  }
+
+  .about-location {
+    margin: .55rem 0 0;
+    font-size: .9rem;
+    opacity: .5;
+  }
+
+  .about-bio {
+    margin: clamp(3rem, 7vw, 6rem) 0 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 3.2rem);
+    line-height: 1.08;
+  }
+
+  .about-section {
+    display: grid;
+    grid-template-columns: minmax(120px, .35fr) 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+    border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  .about-label {
+    opacity: .55;
+  }
+
+  .elsewhere-list {
+    display: grid;
+  }
+
+  .elsewhere-link {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: .75rem 0;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  .elsewhere-link:hover,
+  .elsewhere-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .about-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-top: 4rem;
+    padding-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    font-size: .7rem;
+    opacity: .45;
+  }
+
+  @media (max-width: 760px) {
+    .about-grid {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+
+    .about-photo img {
+      max-height: none;
+    }
+
+    .about-section {
+      grid-template-columns: 1fr;
+      gap: .75rem;
+    }
+
+    .about-footer {
+      flex-direction: column;
+      gap: .5rem;
+    }
+  }
+</style>
