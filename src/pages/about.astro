@@ -1,17 +1,25 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { withBase } from '../lib/site';
+import { getEntry, render } from 'astro:content';
+
+const entry = await getEntry('about', 'about');
+if (!entry) throw new Error('About content entry is missing.');
+
+const { Content } = await render(entry);
+const { name, role, location, email, instagram, tiktok, spotify, substack, youtube, appleMusic } = entry.data;
 
 const elsewhere = [
-  ['apple music', '#'],
-  ['instagram', '#'],
-  ['spotify', '#'],
-  ['substack', '#'],
-  ['tiktok', '#'],
-  ['youtube', '#'],
-];
+  ['apple music', appleMusic],
+  ['instagram', instagram],
+  ['spotify', spotify],
+  ['substack', substack],
+  ['tiktok', tiktok],
+  ['youtube', youtube],
+].filter(([, href]) => Boolean(href));
 ---
-<BaseLayout title="About · Artist Archive" description="About the artist behind this living creative archive.">
+
+<BaseLayout title="About · sid !!!" description={`About ${name}.`}>
   <main class="about-page">
     <a class="back-link" href={withBase('/')}>← home</a>
 
@@ -28,39 +36,50 @@ const elsewhere = [
       </div>
 
       <div class="about-copy">
-        <p class="about-name" id="about-name">your name</p>
-        <p class="about-role">artist / writer / collector of songs</p>
+        <p class="about-name" id="about-name">{name}</p>
+        <p class="about-role">{role}</p>
+        <p class="about-location">{location}</p>
 
         <div class="about-body">
-          <p>This space is intentionally left close to the artist’s own voice. Replace this text with a few paragraphs about who you are, what you make, what you notice, and why this archive exists.</p>
-          <p>The writing can be personal rather than formal. It does not need to read like a résumé or a traditional artist statement.</p>
+          <Content />
         </div>
       </div>
     </section>
 
-    <section class="about-section" aria-labelledby="elsewhere-title">
-      <div>
-        <span class="mono">elsewhere</span>
-      </div>
-      <nav aria-labelledby="elsewhere-title">
-        <h2 class="sr-only" id="elsewhere-title">Elsewhere</h2>
-        <div class="elsewhere-list">
-          {elsewhere.map(([label, href]) => (
-            <a class="elsewhere-link" href={href} target={href === '#' ? undefined : '_blank'} rel={href === '#' ? undefined : 'noreferrer'}>
-              <span>{label}</span><span aria-hidden="true">↗</span>
-            </a>
-          ))}
+    {elsewhere.length > 0 && (
+      <section class="about-section" aria-labelledby="elsewhere-title">
+        <div>
+          <span class="mono">elsewhere</span>
         </div>
-      </nav>
-    </section>
+
+        <nav aria-labelledby="elsewhere-title">
+          <h2 class="sr-only" id="elsewhere-title">Elsewhere</h2>
+
+          <div class="elsewhere-list">
+            {elsewhere.map(([label, href]) => (
+              <a
+                class="elsewhere-link"
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>{label}</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </div>
+        </nav>
+      </section>
+    )}
 
     <section class="about-section" aria-labelledby="contact-title">
       <div>
         <span class="mono">contact</span>
       </div>
+
       <div>
         <h2 class="sr-only" id="contact-title">Contact</h2>
-        <a class="contact-link" href="mailto:hello@example.com">hello@example.com</a>
+        <a class="contact-link" href={`mailto:${email}`}>{email}</a>
       </div>
     </section>
 
@@ -70,3 +89,155 @@ const elsewhere = [
     </footer>
   </main>
 </BaseLayout>
+
+<style>
+  .about-page {
+    width: min(100% - 2rem, 1080px);
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 5rem) 0 7rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: clamp(4rem, 10vw, 8rem);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .back-link:hover,
+  .back-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .about-hero {
+    display: grid;
+    gap: .35rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  }
+
+  .about-hero h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 11vw, 9rem);
+    font-weight: 400;
+    line-height: .88;
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, .7fr) minmax(0, 1fr);
+    gap: clamp(3rem, 8vw, 8rem);
+    align-items: start;
+    padding: clamp(4rem, 9vw, 8rem) 0;
+  }
+
+  .about-photo {
+    min-height: 420px;
+    display: grid;
+    place-items: center;
+    padding: 2rem;
+    border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+    opacity: .55;
+  }
+
+  .about-copy {
+    max-width: 42rem;
+  }
+
+  .about-name {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: .95;
+  }
+
+  .about-role,
+  .about-location {
+    margin: .5rem 0 0;
+    opacity: .55;
+  }
+
+  .about-body {
+    max-width: 38rem;
+    margin-top: clamp(3rem, 6vw, 5rem);
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    line-height: 1.8;
+  }
+
+  .about-body :global(p) {
+    margin: 0 0 1.6em;
+  }
+
+  .about-section {
+    display: grid;
+    grid-template-columns: minmax(120px, .35fr) 1fr;
+    gap: 2rem;
+    padding: 2rem 0;
+    border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  .elsewhere-list {
+    display: grid;
+  }
+
+  .elsewhere-link {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    padding: .75rem 0;
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent);
+  }
+
+  .elsewhere-link:hover,
+  .elsewhere-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .contact-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .contact-link:hover,
+  .contact-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  .about-colophon {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-top: 4rem;
+    padding-top: 1rem;
+    border-top: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    font-size: .7rem;
+    opacity: .45;
+  }
+
+  @media (max-width: 760px) {
+    .about-grid {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+
+    .about-photo {
+      min-height: 280px;
+    }
+
+    .about-section {
+      grid-template-columns: 1fr;
+      gap: .75rem;
+    }
+
+    .about-colophon {
+      flex-direction: column;
+      gap: .5rem;
+    }
+  }
+</style>
