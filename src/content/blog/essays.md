@@ -1,7 +1,7 @@
 ---
-title: "Essays on Substack"
-description: "Longer essays, criticism, and reflection live on Substack."
-substackUrl: "https://substack.com/"
+title: "the horror of incorrect love"
+description: "film and its adaptation of love"
+substackUrl: "h[ttps://substack.com/](https://sidwindow.substack.com/p/the-horror-of-incorrect-love?r=62wjin&utm_campaign=post&utm_medium=web)"
 featured: true
 ---
 
