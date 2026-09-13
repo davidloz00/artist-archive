@@ -1,14 +1,14 @@
 ---
 title: "About"
 name: "sid !!!"
-role: "artist / writer / collector of songs"
-location: "Los Angeles"
-email: "hello@example.com"
-instagram: "https://instagram.com/"
-tiktok: "https://tiktok.com/"
-spotify: "https://open.spotify.com/"
-substack: "https://substack.com/"
-youtube: "https://youtube.com/"
+role: "drinking coffee"
+location: "los angeles"
+email: "@sid8world"
+instagram: "[https://instagram.com/](https://www.instagram.com/sid8world/)"
+tiktok: "[https://www.tiktok.com/@sid8world?](https://www.tiktok.com/@sid8world?is_from_webapp=1&sender_device=pc)"
+spotify: "[https://open.spotify.com/](https://open.spotify.com/user/31xj55cey73so7qarqw4vpc54jvu?si=e32ee66db147433e)"
+substack: "[https://substack.com/](https://substack.com/@sidwindow)"
+youtube: "[https://youtube.com/](https://www.youtube.com/@sid8world)"
 ---
 
 This is where the real about text will go.
