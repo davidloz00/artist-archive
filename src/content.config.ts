@@ -111,23 +111,6 @@ const rituals = defineCollection({
   }),
 });
 
-const about = defineCollection({
-  loader: glob({ pattern: 'about.md', base: './src/content/about' }),
-  schema: z.object({
-    title: z.string(),
-    name: z.string(),
-    role: z.string(),
-    location: z.string(),
-    email: z.string().email(),
-    instagram: z.string().url().optional(),
-    tiktok: z.string().url().optional(),
-    spotify: z.string().url().optional(),
-    substack: z.string().url().optional(),
-    youtube: z.string().url().optional(),
-    appleMusic: z.string().url().optional(),
-  }),
-});
-
 export const collections = {
   artwork,
   blog,
@@ -136,6 +119,5 @@ export const collections = {
   sketchbooks,
   projects,
   notes,
-  rituals,
-  about,
+  rituals
 };
