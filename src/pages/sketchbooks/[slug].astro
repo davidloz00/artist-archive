@@ -1,0 +1,65 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SketchbookViewer from '../../components/sketchbooks/SketchbookViewer.astro';
+import { withBase } from '../../lib/site';
+import '../../styles/sketchbooks.css';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('sketchbooks');
+
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+---
+
+<BaseLayout title={`${entry.data.title} · Sketchbooks · sid !!!`}>
+  <main class="sketchbook-detail-page">
+    <a class="sketchbooks-back" href={withBase('/sketchbooks/')}>← all sketchbooks</a>
+
+    {entry.data.video ? (
+      <SketchbookViewer
+        title={entry.data.title}
+        yearLabel={entry.data.yearLabel ?? String(entry.data.year ?? '')}
+        format={entry.data.format}
+        description={entry.data.description}
+        video={entry.data.video}
+        favorites={entry.data.favoritePages}
+      />
+    ) : (
+      <p>This sketchbook does not have a video yet.</p>
+    )}
+  </main>
+</BaseLayout>
+
+<style>
+  .sketchbook-detail-page {
+    width: min(100% - 2rem, 1200px);
+    margin: 0 auto;
+    padding: 2rem 0 6rem;
+  }
+
+  .sketchbooks-back {
+    display: inline-block;
+    margin: 1rem 0 2rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .sketchbooks-back:hover,
+  .sketchbooks-back:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: .16em;
+  }
+
+  @media (max-width: 760px) {
+    .sketchbook-detail-page {
+      width: min(100% - 1rem, 620px);
+      padding-top: 1rem;
+    }
+  }
+</style>

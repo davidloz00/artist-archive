@@ -1,22 +1,151 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import SketchbookViewer from '../../components/sketchbooks/SketchbookViewer.astro';
 import { withBase } from '../../lib/site';
-import '../../styles/sketchbooks.css';
-const sketchbooks=await getCollection('sketchbooks');
-const entries=[...sketchbooks].sort((a,b)=>(b.data.year??0)-(a.data.year??0));
-const selectedId=Astro.url.searchParams.get('book');
-const selected=selectedId?entries.find(e=>e.id===selectedId):undefined;
+
+const sketchbooks = await getCollection('sketchbooks');
+const entries = [...sketchbooks].sort((a, b) => (b.data.year ?? 0) - (a.data.year ?? 0));
 ---
+
 <BaseLayout title="Sketchbooks · sid !!!">
-<main class="sketchbooks-page">
-<a class="back-link" href={withBase('/')}>← home</a>
-{!selected?(<>
-<header class="sketchbooks-header"><p class="mono">archive / {entries.length}</p><h1>sketchbooks</h1><p>Working pages, studies, and notebooks kept close to hand.</p></header>
-<div class="sketchbooks-archive">{entries.map(entry=><a class="sketchbook-card" href={`${withBase('/sketchbooks/')}?book=${encodeURIComponent(entry.id)}`}><div class="sketchbook-card__cover">{entry.data.cover&&<img src={withBase(entry.data.cover)} alt={`${entry.data.title} cover`} />}</div><div class="sketchbook-card__meta"><h2>{entry.data.title}</h2><span class="mono">{entry.data.yearLabel??entry.data.year} · {entry.data.format}</span></div></a>)}</div>
-</>):(<>
-<a class="sketchbooks-back" href={withBase('/sketchbooks/')}>← all sketchbooks</a>
-{selected.data.video?<SketchbookViewer title={selected.data.title} yearLabel={selected.data.yearLabel??String(selected.data.year??'')} format={selected.data.format} description={selected.data.description} video={selected.data.video} favorites={selected.data.favoritePages}/>:<p>This sketchbook does not have a video yet.</p>}
-</>)}
-</main></BaseLayout>
+  <main class="sketchbooks-page">
+    <a class="back-link" href={withBase('/')}>← home</a>
+
+    <header class="sketchbooks-header">
+      <p class="mono">archive / {entries.length}</p>
+      <h1>sketchbooks</h1>
+      <p>Working pages, studies, and notebooks kept close to hand.</p>
+    </header>
+
+    <div class="sketchbooks-archive">
+      {entries.map((entry) => (
+        <a
+          class="sketchbook-card"
+          href={withBase(`/sketchbooks/${entry.id}/`)}
+        >
+          <div class="sketchbook-card__cover">
+            {entry.data.cover && (
+              <img
+                src={withBase(entry.data.cover)}
+                alt={`${entry.data.title} cover`}
+                loading="lazy"
+              />
+            )}
+          </div>
+          <div class="sketchbook-card__meta">
+            <h2>{entry.data.title}</h2>
+            <span class="mono">
+              {entry.data.yearLabel ?? entry.data.year} · {entry.data.format}
+            </span>
+          </div>
+        </a>
+      ))}
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .sketchbooks-page {
+    width: min(100% - 2rem, 1200px);
+    margin: 0 auto;
+    padding: 2rem 0 6rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 1rem;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .sketchbooks-header {
+    margin: 1rem 0 5rem;
+  }
+
+  .sketchbooks-header h1 {
+    margin: 1rem 0;
+    font-size: clamp(3rem, 7vw, 6rem);
+    font-weight: 400;
+  }
+
+  .sketchbooks-header > p:last-child {
+    opacity: .65;
+  }
+
+  .sketchbooks-archive {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(3rem, 8vw, 8rem);
+  }
+
+  .sketchbook-card {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .sketchbook-card__cover {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    min-height: 420px;
+  }
+
+  .sketchbook-card__cover img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: 560px;
+    object-fit: contain;
+    transition: transform 180ms ease;
+  }
+
+  .sketchbook-card:hover .sketchbook-card__cover img,
+  .sketchbook-card:focus-visible .sketchbook-card__cover img {
+    transform: translateY(-5px);
+  }
+
+  .sketchbook-card__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: baseline;
+    margin-top: 1rem;
+  }
+
+  .sketchbook-card__meta h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 400;
+  }
+
+  .sketchbook-card__meta span {
+    font-size: .68rem;
+    opacity: .55;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 760px) {
+    .sketchbooks-page {
+      width: min(100% - 1rem, 620px);
+      padding-top: 1rem;
+    }
+
+    .sketchbooks-archive {
+      grid-template-columns: 1fr;
+      gap: 4rem;
+    }
+
+    .sketchbook-card__cover {
+      min-height: 0;
+    }
+
+    .sketchbook-card__cover img {
+      max-height: 520px;
+    }
+
+    .sketchbook-card__meta {
+      align-items: end;
+    }
+  }
+</style>
