@@ -8,9 +8,19 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
   const bd = b.data.date?.getTime() ?? 0;
   return bd - ad;
 });
+
+const artworks = entries.map((entry) => ({
+  title: entry.data.title,
+  image: withBase(entry.data.image),
+  highResImage: entry.data.highResImage ? withBase(entry.data.highResImage) : withBase(entry.data.image),
+  alt: entry.data.alt ?? entry.data.title,
+  year: entry.data.year ?? '',
+  medium: entry.data.medium ?? '',
+  dimensions: entry.data.dimensions ?? '',
+}));
 ---
 
-<BaseLayout title="Artwork · Artist Archive" description="finished pieces">
+<BaseLayout title="Artwork · Artist Archive" description="Finished pieces, studies, and things I decided to keep.">
   <main class="artwork-page">
     <a class="artwork-page__home" href={withBase('/')}>← home</a>
 
@@ -27,25 +37,30 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
 
     <section class="artwork-grid" aria-label="Artwork archive">
       {entries.map((entry, index) => (
-        <a class="artwork-card" href={withBase(`/artwork/${entry.id}/`)}>
-          <div class="artwork-card__image">
+        <button
+          class="artwork-card"
+          type="button"
+          data-artwork-index={index}
+          aria-label={`Open ${entry.data.title}`}
+        >
+          <span class="artwork-card__image">
             <img
               src={withBase(entry.data.image)}
               alt={entry.data.alt ?? entry.data.title}
               loading={index < 6 ? 'eager' : 'lazy'}
               decoding="async"
             />
-          </div>
+          </span>
 
-          <div class="artwork-card__meta">
-            <h2>{entry.data.title}</h2>
+          <span class="artwork-card__meta">
+            <span class="artwork-card__title">{entry.data.title}</span>
 
-            <div class="artwork-card__details">
+            <span class="artwork-card__details">
               {entry.data.year && <span>{entry.data.year}</span>}
               {entry.data.medium && <span>{entry.data.medium}</span>}
-            </div>
-          </div>
-        </a>
+            </span>
+          </span>
+        </button>
       ))}
     </section>
 
@@ -54,6 +69,185 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
     )}
   </main>
 </BaseLayout>
+
+<div class="artwork-lightbox" id="artwork-lightbox" aria-hidden="true" role="dialog" aria-modal="true">
+  <button class="artwork-lightbox__backdrop" type="button" aria-label="Close artwork viewer" data-close></button>
+
+  <div class="artwork-lightbox__shell">
+    <button class="artwork-lightbox__close" type="button" aria-label="Close artwork viewer" data-close>×</button>
+
+    <button
+      class="artwork-lightbox__arrow artwork-lightbox__arrow--left"
+      type="button"
+      aria-label="Previous artwork"
+      data-prev
+    >←</button>
+
+    <div class="artwork-lightbox__stage">
+      <img id="artwork-lightbox-image" alt="" draggable="false" />
+    </div>
+
+    <button
+      class="artwork-lightbox__arrow artwork-lightbox__arrow--right"
+      type="button"
+      aria-label="Next artwork"
+      data-next
+    >→</button>
+
+    <div class="artwork-lightbox__info">
+      <div>
+        <p id="artwork-lightbox-title"></p>
+        <p class="mono" id="artwork-lightbox-meta"></p>
+      </div>
+      <span class="mono" id="artwork-lightbox-counter"></span>
+    </div>
+  </div>
+</div>
+
+<script is:inline define:vars={{ artworks }}>
+  (() => {
+    const box = document.querySelector('#artwork-lightbox');
+    const image = document.querySelector('#artwork-lightbox-image');
+    const title = document.querySelector('#artwork-lightbox-title');
+    const meta = document.querySelector('#artwork-lightbox-meta');
+    const counter = document.querySelector('#artwork-lightbox-counter');
+    const triggers = [...document.querySelectorAll('[data-artwork-index]')];
+
+    if (!box || !image || !title || !meta || !counter) return;
+
+    let index = 0;
+    let scale = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startOffsetX = 0;
+    let startOffsetY = 0;
+    let touchStartX = null;
+    let touchStartY = null;
+
+    const applyTransform = () => {
+      image.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+      image.style.cursor = scale > 1 ? (dragging ? 'grabbing' : 'grab') : 'zoom-in';
+    };
+
+    const resetView = () => {
+      scale = 1;
+      offsetX = 0;
+      offsetY = 0;
+      applyTransform();
+    };
+
+    const render = () => {
+      resetView();
+      const item = artworks[index];
+      image.src = item.highResImage || item.image;
+      image.alt = item.alt || item.title;
+      title.textContent = item.title;
+      const details = [item.medium, item.dimensions, item.year].filter(Boolean);
+      meta.textContent = details.join(' · ');
+      counter.textContent = `${String(index + 1).padStart(2, '0')} / ${String(artworks.length).padStart(2, '0')}`;
+    };
+
+    const open = (nextIndex) => {
+      index = nextIndex;
+      render();
+      box.classList.add('is-open');
+      box.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('artwork-lightbox-open');
+    };
+
+    const close = () => {
+      box.classList.remove('is-open');
+      box.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('artwork-lightbox-open');
+      resetView();
+    };
+
+    const step = (amount) => {
+      index = (index + amount + artworks.length) % artworks.length;
+      render();
+    };
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('click', () => open(Number(trigger.dataset.artworkIndex)));
+    });
+
+    box.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+    box.querySelector('[data-prev]')?.addEventListener('click', () => step(-1));
+    box.querySelector('[data-next]')?.addEventListener('click', () => step(1));
+
+    image.addEventListener('dblclick', (event) => {
+      event.preventDefault();
+      scale = scale > 1 ? 1 : 2;
+      offsetX = 0;
+      offsetY = 0;
+      applyTransform();
+    });
+
+    image.addEventListener('wheel', (event) => {
+      if (!box.classList.contains('is-open')) return;
+      event.preventDefault();
+      const nextScale = scale + (event.deltaY < 0 ? 0.15 : -0.15);
+      scale = Math.min(4, Math.max(1, nextScale));
+      if (scale === 1) {
+        offsetX = 0;
+        offsetY = 0;
+      }
+      applyTransform();
+    }, { passive: false });
+
+    image.addEventListener('mousedown', (event) => {
+      if (scale <= 1) return;
+      dragging = true;
+      startX = event.clientX;
+      startY = event.clientY;
+      startOffsetX = offsetX;
+      startOffsetY = offsetY;
+      applyTransform();
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!dragging) return;
+      offsetX = startOffsetX + (event.clientX - startX);
+      offsetY = startOffsetY + (event.clientY - startY);
+      applyTransform();
+    });
+
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      applyTransform();
+    });
+
+    box.addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1) return;
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+    }, { passive: true });
+
+    box.addEventListener('touchend', (event) => {
+      if (touchStartX === null || touchStartY === null || event.changedTouches.length !== 1) return;
+
+      const dx = event.changedTouches[0].clientX - touchStartX;
+      const dy = event.changedTouches[0].clientY - touchStartY;
+      touchStartX = null;
+      touchStartY = null;
+
+      if (scale === 1 && Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        step(dx < 0 ? 1 : -1);
+      }
+    }, { passive: true });
+
+    document.addEventListener('keydown', (event) => {
+      if (!box.classList.contains('is-open')) return;
+      if (event.key === 'Escape') close();
+      if (event.key === 'ArrowLeft') step(-1);
+      if (event.key === 'ArrowRight') step(1);
+      if (event.key === '0') resetView();
+    });
+  })();
+</script>
 
 <style>
   .artwork-page {
@@ -110,9 +304,13 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
 
   .artwork-card {
     display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
     color: inherit;
-    text-decoration: none;
-    min-width: 0;
+    text-align: left;
+    cursor: zoom-in;
   }
 
   .artwork-card__image {
@@ -139,6 +337,11 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
     transform: scale(1.015);
   }
 
+  .artwork-card:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 6px;
+  }
+
   .artwork-card__meta {
     display: flex;
     justify-content: space-between;
@@ -147,8 +350,7 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
     padding-top: .75rem;
   }
 
-  .artwork-card__meta h2 {
-    margin: 0;
+  .artwork-card__title {
     font-size: .92rem;
     font-weight: 400;
     line-height: 1.2;
@@ -173,6 +375,122 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
   .artwork-empty {
     margin-top: 4rem;
     color: color-mix(in srgb, currentColor 55%, transparent);
+  }
+
+  .artwork-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+  }
+
+  .artwork-lightbox.is-open {
+    display: block;
+  }
+
+  .artwork-lightbox__backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: color-mix(in srgb, currentColor 17%, transparent);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    cursor: pointer;
+  }
+
+  .artwork-lightbox__shell {
+    position: relative;
+    z-index: 1;
+    width: min(100% - 2rem, 1320px);
+    height: 100%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 4rem minmax(0, 1fr) 4rem;
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .artwork-lightbox__shell > * {
+    pointer-events: auto;
+  }
+
+  .artwork-lightbox__stage {
+    grid-column: 2;
+    grid-row: 1;
+    height: min(78vh, 840px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  .artwork-lightbox__stage img {
+    display: block;
+    max-width: min(78vw, 980px);
+    max-height: 76vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transform-origin: center;
+    user-select: none;
+    -webkit-user-drag: none;
+    transition: transform 140ms ease;
+  }
+
+  .artwork-lightbox__arrow {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .artwork-lightbox__arrow--left {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .artwork-lightbox__arrow--right {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .artwork-lightbox__close {
+    position: absolute;
+    top: 1rem;
+    right: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 2rem;
+    cursor: pointer;
+  }
+
+  .artwork-lightbox__info {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 2rem;
+    padding: .5rem 0 1.5rem;
+  }
+
+  .artwork-lightbox__info p {
+    margin: 0;
+  }
+
+  #artwork-lightbox-title {
+    font-size: .95rem;
+    margin-bottom: .25rem;
+  }
+
+  .artwork-lightbox-open {
+    overflow: hidden;
   }
 
   @media (max-width: 900px) {
@@ -228,6 +546,28 @@ const entries = (await getCollection('artwork')).sort((a, b) => {
       justify-content: flex-start;
       margin-top: .25rem;
       white-space: normal;
+    }
+
+    .artwork-lightbox__shell {
+      width: calc(100% - .5rem);
+      grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+    }
+
+    .artwork-lightbox__stage {
+      height: 78vh;
+    }
+
+    .artwork-lightbox__stage img {
+      max-width: 88vw;
+      max-height: 72vh;
+    }
+
+    .artwork-lightbox__info {
+      padding-bottom: 1rem;
+    }
+
+    .artwork-lightbox__close {
+      right: .4rem;
     }
   }
 </style>
