@@ -1,48 +1,265 @@
 ---
 import { withBase } from '../../lib/site';
-interface Favorite { src: string; alt?: string; }
-interface Props { title: string; yearLabel: string; format: string; description?: string; video: string; favorites: Favorite[]; }
+
+interface Favorite {
+  src: string;
+  alt?: string;
+}
+
+interface Props {
+  title: string;
+  yearLabel: string;
+  format: string;
+  description?: string;
+  video: string;
+  favorites: Favorite[];
+}
+
 const { title, yearLabel, format, description, video, favorites } = Astro.props;
-const favoriteData = favorites.map((item) => ({ ...item, src: withBase(item.src) }));
+const favoriteData = favorites.map((item) => ({
+  ...item,
+  src: withBase(item.src),
+}));
 ---
+
 <section class="sketchbook-experience">
   <header class="sketchbook-experience__header">
-    <div><p class="mono">{format} / {yearLabel}</p><h1>{title}</h1></div>
+    <div>
+      <p class="mono">{format} / {yearLabel}</p>
+      <h1>{title}</h1>
+    </div>
     {description && <p class="sketchbook-experience__description">{description}</p>}
   </header>
+
   <div class="sketchbook-experience__layout">
-    <div class="sketchbook-experience__video"><video src={withBase(video)} autoplay muted loop playsinline preload="metadata" aria-label={`Video flip-through of ${title}`}></video></div>
+    <div class="sketchbook-experience__video">
+      <button
+        class="sketchbook-video"
+        type="button"
+        aria-label="Pause sketchbook video"
+        data-video-toggle
+      >
+        <video
+          src={withBase(video)}
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+          aria-hidden="true"
+        ></video>
+        <span class="sketchbook-video__status" aria-hidden="true" data-video-status>Ⅱ</span>
+      </button>
+    </div>
+
     <section class="sketchbook-favorites" aria-labelledby="favorites-heading">
-      <div class="sketchbook-favorites__heading"><p class="mono">selected pages / {String(favorites.length).padStart(2,'0')}</p><h2 id="favorites-heading">favorites</h2></div>
+      <div class="sketchbook-favorites__heading">
+        <p class="mono">selected pages / {String(favorites.length).padStart(2, '0')}</p>
+        <h2 id="favorites-heading">favorites</h2>
+      </div>
+
       <div class="sketchbook-favorites__grid">
-        {favorites.map((favorite,index)=>(<button class="sketchbook-favorite" type="button" data-favorite-index={index} aria-label={`Open favorite page ${index+1}`}><img src={withBase(favorite.src)} alt={favorite.alt ?? `Favorite page ${index+1}`} loading="lazy" /></button>))}
+        {favorites.map((favorite, index) => (
+          <button
+            class="sketchbook-favorite"
+            type="button"
+            data-favorite-index={index}
+            aria-label={`Open favorite page ${index + 1}`}
+          >
+            <img
+              src={withBase(favorite.src)}
+              alt={favorite.alt ?? `Favorite page ${index + 1}`}
+              loading="lazy"
+            />
+          </button>
+        ))}
       </div>
     </section>
   </div>
 </section>
+
 <div class="sketchbook-lightbox" id="sketchbook-lightbox" aria-hidden="true" role="dialog" aria-modal="true">
   <button class="sketchbook-lightbox__backdrop" type="button" aria-label="Close viewer" data-close></button>
+
   <div class="sketchbook-lightbox__shell">
     <button class="sketchbook-lightbox__close" type="button" aria-label="Close" data-close>×</button>
     <button class="sketchbook-lightbox__arrow sketchbook-lightbox__arrow--left" type="button" aria-label="Previous page" data-prev>←</button>
-    <div class="sketchbook-lightbox__stage"><img id="sketchbook-lightbox-image" alt="" /></div>
+
+    <div class="sketchbook-lightbox__stage">
+      <img id="sketchbook-lightbox-image" alt="" />
+    </div>
+
     <button class="sketchbook-lightbox__arrow sketchbook-lightbox__arrow--right" type="button" aria-label="Next page" data-next>→</button>
-    <div class="sketchbook-lightbox__controls"><button type="button" data-rotate aria-label="Rotate image 90 degrees">↻ rotate</button><span class="mono" id="sketchbook-lightbox-counter"></span></div>
+
+    <div class="sketchbook-lightbox__controls">
+      <button type="button" data-rotate aria-label="Rotate image 90 degrees">↻ rotate</button>
+      <span class="mono" id="sketchbook-lightbox-counter"></span>
+    </div>
   </div>
 </div>
+
 <script is:inline define:vars={{ favoriteData }}>
-(() => {
-  const box=document.querySelector('#sketchbook-lightbox'), image=document.querySelector('#sketchbook-lightbox-image'), counter=document.querySelector('#sketchbook-lightbox-counter'), triggers=[...document.querySelectorAll('[data-favorite-index]')];
-  if(!box||!image||!counter) return; let index=0,rotation=0,touchX=null,touchY=null;
-  const render=()=>{rotation=0;const item=favoriteData[index];image.src=item.src;image.alt=item.alt||`Favorite page ${index+1}`;image.style.transform='rotate(0deg)';counter.textContent=`${String(index+1).padStart(2,'0')} / ${String(favoriteData.length).padStart(2,'0')}`;};
-  const open=(i)=>{index=i;render();box.classList.add('is-open');box.setAttribute('aria-hidden','false');document.body.classList.add('sketchbook-lightbox-open');};
-  const close=()=>{box.classList.remove('is-open');box.setAttribute('aria-hidden','true');document.body.classList.remove('sketchbook-lightbox-open');rotation=0;image.style.transform='rotate(0deg)';};
-  const step=(n)=>{index=(index+n+favoriteData.length)%favoriteData.length;render();};
-  triggers.forEach(t=>t.addEventListener('click',()=>open(Number(t.dataset.favoriteIndex))));
-  box.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',close)); box.querySelector('[data-prev]')?.addEventListener('click',()=>step(-1)); box.querySelector('[data-next]')?.addEventListener('click',()=>step(1));
-  box.querySelector('[data-rotate]')?.addEventListener('click',()=>{rotation=(rotation+90)%360;image.style.transform=`rotate(${rotation}deg)`;});
-  document.addEventListener('keydown',e=>{if(!box.classList.contains('is-open'))return;if(e.key==='Escape')close();if(e.key==='ArrowLeft')step(-1);if(e.key==='ArrowRight')step(1);if(e.key.toLowerCase()==='r'){rotation=(rotation+90)%360;image.style.transform=`rotate(${rotation}deg)`;}});
-  box.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;touchX=e.touches[0].clientX;touchY=e.touches[0].clientY;},{passive:true});
-  box.addEventListener('touchend',e=>{if(touchX===null||touchY===null||e.changedTouches.length!==1)return;const dx=e.changedTouches[0].clientX-touchX,dy=e.changedTouches[0].clientY-touchY;touchX=null;touchY=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.2)step(dx<0?1:-1);},{passive:true});
-})();
+  (() => {
+    const box = document.querySelector('#sketchbook-lightbox');
+    const image = document.querySelector('#sketchbook-lightbox-image');
+    const counter = document.querySelector('#sketchbook-lightbox-counter');
+    const triggers = [...document.querySelectorAll('[data-favorite-index]')];
+    const videoButton = document.querySelector('[data-video-toggle]');
+    const video = videoButton?.querySelector('video');
+    const videoStatus = videoButton?.querySelector('[data-video-status]');
+
+    if (!box || !image || !counter) return;
+
+    let index = 0;
+    let rotation = 0;
+    let touchX = null;
+    let touchY = null;
+    let statusTimer = null;
+
+    const render = () => {
+      rotation = 0;
+      const item = favoriteData[index];
+      image.src = item.src;
+      image.alt = item.alt || `Favorite page ${index + 1}`;
+      image.style.transform = 'rotate(0deg)';
+      counter.textContent = `${String(index + 1).padStart(2, '0')} / ${String(favoriteData.length).padStart(2, '0')}`;
+    };
+
+    const open = (nextIndex) => {
+      index = nextIndex;
+      render();
+      box.classList.add('is-open');
+      box.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('sketchbook-lightbox-open');
+    };
+
+    const close = () => {
+      box.classList.remove('is-open');
+      box.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('sketchbook-lightbox-open');
+      rotation = 0;
+      image.style.transform = 'rotate(0deg)';
+    };
+
+    const step = (amount) => {
+      index = (index + amount + favoriteData.length) % favoriteData.length;
+      render();
+    };
+
+    const showVideoStatus = () => {
+      if (!videoStatus) return;
+      videoStatus.textContent = video?.paused ? '▶' : 'Ⅱ';
+      videoStatus.classList.remove('is-visible');
+      requestAnimationFrame(() => videoStatus.classList.add('is-visible'));
+      window.clearTimeout(statusTimer);
+      statusTimer = window.setTimeout(() => {
+        videoStatus.classList.remove('is-visible');
+      }, 550);
+    };
+
+    videoButton?.addEventListener('click', () => {
+      if (!video) return;
+      if (video.paused) {
+        video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+      showVideoStatus();
+      videoButton.setAttribute('aria-label', video.paused ? 'Play sketchbook video' : 'Pause sketchbook video');
+    });
+
+    triggers.forEach((trigger) => {
+      trigger.addEventListener('click', () => open(Number(trigger.dataset.favoriteIndex)));
+    });
+
+    box.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+    box.querySelector('[data-prev]')?.addEventListener('click', () => step(-1));
+    box.querySelector('[data-next]')?.addEventListener('click', () => step(1));
+    box.querySelector('[data-rotate]')?.addEventListener('click', () => {
+      rotation = (rotation + 90) % 360;
+      image.style.transform = `rotate(${rotation}deg)`;
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!box.classList.contains('is-open')) return;
+      if (event.key === 'Escape') close();
+      if (event.key === 'ArrowLeft') step(-1);
+      if (event.key === 'ArrowRight') step(1);
+      if (event.key.toLowerCase() === 'r') {
+        rotation = (rotation + 90) % 360;
+        image.style.transform = `rotate(${rotation}deg)`;
+      }
+    });
+
+    box.addEventListener('touchstart', (event) => {
+      if (event.touches.length !== 1) return;
+      touchX = event.touches[0].clientX;
+      touchY = event.touches[0].clientY;
+    }, { passive: true });
+
+    box.addEventListener('touchend', (event) => {
+      if (touchX === null || touchY === null || event.changedTouches.length !== 1) return;
+      const dx = event.changedTouches[0].clientX - touchX;
+      const dy = event.changedTouches[0].clientY - touchY;
+      touchX = null;
+      touchY = null;
+      if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.2) step(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
 </script>
+
+<style>
+  .sketchbook-video {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .sketchbook-video video {
+    display: block;
+    width: min(100%, 430px);
+    aspect-ratio: 9 / 16;
+    object-fit: cover;
+    margin: 0 auto;
+  }
+
+  .sketchbook-video__status {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(.94);
+    display: grid;
+    place-items: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    background: rgb(0 0 0 / 28%);
+    color: white;
+    font-size: 1rem;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 120ms ease, transform 120ms ease;
+    pointer-events: none;
+  }
+
+  .sketchbook-video__status.is-visible {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  @media (max-width: 760px) {
+    .sketchbook-video video {
+      width: auto;
+      height: 100%;
+      max-width: 100%;
+      aspect-ratio: 9 / 16;
+      object-fit: contain;
+      margin: 0;
+    }
+  }
+</style>
