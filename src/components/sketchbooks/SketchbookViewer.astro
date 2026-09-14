@@ -85,7 +85,7 @@ const favoriteData = favorites.map((item) => ({
     <button class="sketchbook-lightbox__close" type="button" aria-label="Close" data-close>×</button>
     <button class="sketchbook-lightbox__arrow sketchbook-lightbox__arrow--left" type="button" aria-label="Previous page" data-prev>←</button>
 
-    <div class="sketchbook-lightbox__stage">
+    <div class="sketchbook-lightbox__stage" data-stage-close>
       <img id="sketchbook-lightbox-image" alt="" />
     </div>
 
@@ -107,6 +107,7 @@ const favoriteData = favorites.map((item) => ({
     const videoButton = document.querySelector('[data-video-toggle]');
     const video = videoButton?.querySelector('video');
     const videoStatus = videoButton?.querySelector('[data-video-status]');
+    const stage = box?.querySelector('[data-stage-close]');
 
     if (!box || !image || !counter) return;
 
@@ -173,6 +174,13 @@ const favoriteData = favorites.map((item) => ({
     });
 
     box.querySelectorAll('[data-close]').forEach((el) => el.addEventListener('click', close));
+
+    // Desktop fix: the whole lightbox stage is now a close target.
+    // Clicking the image itself does not close the viewer.
+    stage?.addEventListener('click', (event) => {
+      if (event.target === stage) close();
+    });
+
     box.querySelector('[data-prev]')?.addEventListener('click', () => step(-1));
     box.querySelector('[data-next]')?.addEventListener('click', () => step(1));
     box.querySelector('[data-rotate]')?.addEventListener('click', () => {
@@ -207,59 +215,3 @@ const favoriteData = favorites.map((item) => ({
     }, { passive: true });
   })();
 </script>
-
-<style>
-  .sketchbook-video {
-    position: relative;
-    display: block;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .sketchbook-video video {
-    display: block;
-    width: min(100%, 430px);
-    aspect-ratio: 9 / 16;
-    object-fit: cover;
-    margin: 0 auto;
-  }
-
-  .sketchbook-video__status {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%) scale(.94);
-    display: grid;
-    place-items: center;
-    width: 3.25rem;
-    height: 3.25rem;
-    border-radius: 50%;
-    background: rgb(0 0 0 / 28%);
-    color: white;
-    font-size: 1rem;
-    line-height: 1;
-    opacity: 0;
-    transition: opacity 120ms ease, transform 120ms ease;
-    pointer-events: none;
-  }
-
-  .sketchbook-video__status.is-visible {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  @media (max-width: 760px) {
-    .sketchbook-video video {
-      width: auto;
-      height: 100%;
-      max-width: 100%;
-      aspect-ratio: 9 / 16;
-      object-fit: contain;
-      margin: 0;
-    }
-  }
-</style>
