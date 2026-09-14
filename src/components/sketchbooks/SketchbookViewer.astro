@@ -1,1 +1,48 @@
----\nimport { withBase } from '../../lib/site';\ninterface Favorite { src: string; alt?: string; }\ninterface Props { title: string; yearLabel: string; format: string; description?: string; video: string; favorites: Favorite[]; }\nconst { title, yearLabel, format, description, video, favorites } = Astro.props;\nconst favoriteData = favorites.map((item) => ({ ...item, src: withBase(item.src) }));\n---\n<section class="sketchbook-experience">\n  <header class="sketchbook-experience__header">\n    <div><p class="mono">{format} / {yearLabel}</p><h1>{title}</h1></div>\n    {description && <p class="sketchbook-experience__description">{description}</p>}\n  </header>\n  <div class="sketchbook-experience__layout">\n    <div class="sketchbook-experience__video"><video src={withBase(video)} autoplay muted loop playsinline preload="metadata" aria-label={`Video flip-through of ${title}`}></video></div>\n    <section class="sketchbook-favorites" aria-labelledby="favorites-heading">\n      <div class="sketchbook-favorites__heading"><p class="mono">selected pages / {String(favorites.length).padStart(2,'0')}</p><h2 id="favorites-heading">favorites</h2></div>\n      <div class="sketchbook-favorites__grid">\n        {favorites.map((favorite,index)=>(<button class="sketchbook-favorite" type="button" data-favorite-index={index} aria-label={`Open favorite page ${index+1}`}><img src={withBase(favorite.src)} alt={favorite.alt ?? `Favorite page ${index+1}`} loading="lazy" /></button>))}\n      </div>\n    </section>\n  </div>\n</section>\n<div class="sketchbook-lightbox" id="sketchbook-lightbox" aria-hidden="true" role="dialog" aria-modal="true">\n  <button class="sketchbook-lightbox__backdrop" type="button" aria-label="Close viewer" data-close></button>\n  <div class="sketchbook-lightbox__shell">\n    <button class="sketchbook-lightbox__close" type="button" aria-label="Close" data-close>×</button>\n    <button class="sketchbook-lightbox__arrow sketchbook-lightbox__arrow--left" type="button" aria-label="Previous page" data-prev>←</button>\n    <div class="sketchbook-lightbox__stage"><img id="sketchbook-lightbox-image" alt="" /></div>\n    <button class="sketchbook-lightbox__arrow sketchbook-lightbox__arrow--right" type="button" aria-label="Next page" data-next>→</button>\n    <div class="sketchbook-lightbox__controls"><button type="button" data-rotate aria-label="Rotate image 90 degrees">↻ rotate</button><span class="mono" id="sketchbook-lightbox-counter"></span></div>\n  </div>\n</div>\n<script is:inline define:vars={{ favoriteData }}>\n(() => {\n  const box=document.querySelector('#sketchbook-lightbox'), image=document.querySelector('#sketchbook-lightbox-image'), counter=document.querySelector('#sketchbook-lightbox-counter'), triggers=[...document.querySelectorAll('[data-favorite-index]')];\n  if(!box||!image||!counter) return; let index=0,rotation=0,touchX=null,touchY=null;\n  const render=()=>{rotation=0;const item=favoriteData[index];image.src=item.src;image.alt=item.alt||`Favorite page ${index+1}`;image.style.transform='rotate(0deg)';counter.textContent=`${String(index+1).padStart(2,'0')} / ${String(favoriteData.length).padStart(2,'0')}`;};\n  const open=(i)=>{index=i;render();box.classList.add('is-open');box.setAttribute('aria-hidden','false');document.body.classList.add('sketchbook-lightbox-open');};\n  const close=()=>{box.classList.remove('is-open');box.setAttribute('aria-hidden','true');document.body.classList.remove('sketchbook-lightbox-open');rotation=0;image.style.transform='rotate(0deg)';};\n  const step=(n)=>{index=(index+n+favoriteData.length)%favoriteData.length;render();};\n  triggers.forEach(t=>t.addEventListener('click',()=>open(Number(t.dataset.favoriteIndex))));\n  box.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',close)); box.querySelector('[data-prev]')?.addEventListener('click',()=>step(-1)); box.querySelector('[data-next]')?.addEventListener('click',()=>step(1));\n  box.querySelector('[data-rotate]')?.addEventListener('click',()=>{rotation=(rotation+90)%360;image.style.transform=`rotate(${rotation}deg)`;});\n  document.addEventListener('keydown',e=>{if(!box.classList.contains('is-open'))return;if(e.key==='Escape')close();if(e.key==='ArrowLeft')step(-1);if(e.key==='ArrowRight')step(1);if(e.key.toLowerCase()==='r'){rotation=(rotation+90)%360;image.style.transform=`rotate(${rotation}deg)`;}});\n  box.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;touchX=e.touches[0].clientX;touchY=e.touches[0].clientY;},{passive:true});\n  box.addEventListener('touchend',e=>{if(touchX===null||touchY===null||e.changedTouches.length!==1)return;const dx=e.changedTouches[0].clientX-touchX,dy=e.changedTouches[0].clientY-touchY;touchX=null;touchY=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.2)step(dx<0?1:-1);},{passive:true});\n})();\n</script>\n
+---
+import { withBase } from '../../lib/site';
+interface Favorite { src: string; alt?: string; }
+interface Props { title: string; yearLabel: string; format: string; description?: string; video: string; favorites: Favorite[]; }
+const { title, yearLabel, format, description, video, favorites } = Astro.props;
+const favoriteData = favorites.map((item) => ({ ...item, src: withBase(item.src) }));
+---
+<section class="sketchbook-experience">
+  <header class="sketchbook-experience__header">
+    <div><p class="mono">{format} / {yearLabel}</p><h1>{title}</h1></div>
+    {description && <p class="sketchbook-experience__description">{description}</p>}
+  </header>
+  <div class="sketchbook-experience__layout">
+    <div class="sketchbook-experience__video"><video src={withBase(video)} autoplay muted loop playsinline preload="metadata" aria-label={`Video flip-through of ${title}`}></video></div>
+    <section class="sketchbook-favorites" aria-labelledby="favorites-heading">
+      <div class="sketchbook-favorites__heading"><p class="mono">selected pages / {String(favorites.length).padStart(2,'0')}</p><h2 id="favorites-heading">favorites</h2></div>
+      <div class="sketchbook-favorites__grid">
+        {favorites.map((favorite,index)=>(<button class="sketchbook-favorite" type="button" data-favorite-index={index} aria-label={`Open favorite page ${index+1}`}><img src={withBase(favorite.src)} alt={favorite.alt ?? `Favorite page ${index+1}`} loading="lazy" /></button>))}
+      </div>
+    </section>
+  </div>
+</section>
+<div class="sketchbook-lightbox" id="sketchbook-lightbox" aria-hidden="true" role="dialog" aria-modal="true">
+  <button class="sketchbook-lightbox__backdrop" type="button" aria-label="Close viewer" data-close></button>
+  <div class="sketchbook-lightbox__shell">
+    <button class="sketchbook-lightbox__close" type="button" aria-label="Close" data-close>×</button>
+    <button class="sketchbook-lightbox__arrow sketchbook-lightbox__arrow--left" type="button" aria-label="Previous page" data-prev>←</button>
+    <div class="sketchbook-lightbox__stage"><img id="sketchbook-lightbox-image" alt="" /></div>
+    <button class="sketchbook-lightbox__arrow sketchbook-lightbox__arrow--right" type="button" aria-label="Next page" data-next>→</button>
+    <div class="sketchbook-lightbox__controls"><button type="button" data-rotate aria-label="Rotate image 90 degrees">↻ rotate</button><span class="mono" id="sketchbook-lightbox-counter"></span></div>
+  </div>
+</div>
+<script is:inline define:vars={{ favoriteData }}>
+(() => {
+  const box=document.querySelector('#sketchbook-lightbox'), image=document.querySelector('#sketchbook-lightbox-image'), counter=document.querySelector('#sketchbook-lightbox-counter'), triggers=[...document.querySelectorAll('[data-favorite-index]')];
+  if(!box||!image||!counter) return; let index=0,rotation=0,touchX=null,touchY=null;
+  const render=()=>{rotation=0;const item=favoriteData[index];image.src=item.src;image.alt=item.alt||`Favorite page ${index+1}`;image.style.transform='rotate(0deg)';counter.textContent=`${String(index+1).padStart(2,'0')} / ${String(favoriteData.length).padStart(2,'0')}`;};
+  const open=(i)=>{index=i;render();box.classList.add('is-open');box.setAttribute('aria-hidden','false');document.body.classList.add('sketchbook-lightbox-open');};
+  const close=()=>{box.classList.remove('is-open');box.setAttribute('aria-hidden','true');document.body.classList.remove('sketchbook-lightbox-open');rotation=0;image.style.transform='rotate(0deg)';};
+  const step=(n)=>{index=(index+n+favoriteData.length)%favoriteData.length;render();};
+  triggers.forEach(t=>t.addEventListener('click',()=>open(Number(t.dataset.favoriteIndex))));
+  box.querySelectorAll('[data-close]').forEach(el=>el.addEventListener('click',close)); box.querySelector('[data-prev]')?.addEventListener('click',()=>step(-1)); box.querySelector('[data-next]')?.addEventListener('click',()=>step(1));
+  box.querySelector('[data-rotate]')?.addEventListener('click',()=>{rotation=(rotation+90)%360;image.style.transform=`rotate(${rotation}deg)`;});
+  document.addEventListener('keydown',e=>{if(!box.classList.contains('is-open'))return;if(e.key==='Escape')close();if(e.key==='ArrowLeft')step(-1);if(e.key==='ArrowRight')step(1);if(e.key.toLowerCase()==='r'){rotation=(rotation+90)%360;image.style.transform=`rotate(${rotation}deg)`;}});
+  box.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;touchX=e.touches[0].clientX;touchY=e.touches[0].clientY;},{passive:true});
+  box.addEventListener('touchend',e=>{if(touchX===null||touchY===null||e.changedTouches.length!==1)return;const dx=e.changedTouches[0].clientX-touchX,dy=e.changedTouches[0].clientY-touchY;touchX=null;touchY=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.2)step(dx<0?1:-1);},{passive:true});
+})();
+</script>
