@@ -1,8 +1,7 @@
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
-  site: 'https://davidloz00.github.io',
-  base: '/artist-archive',
+  site: 'https://sidwindow.studio',
   trailingSlash: 'ignore',
   build: {
     format: 'directory'
