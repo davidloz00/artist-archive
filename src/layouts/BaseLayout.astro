@@ -8,7 +8,14 @@ interface Props {
   showHomeLink?: boolean;
 }
 
-const { title = 'Artist Archive', description = 'A living archive of artwork, writing, music, films, sketchbooks, and fragments.', showHomeLink = true } = Astro.props;
+const {
+  title = "sid's studio",
+  description = 'looking out the window',
+  showHomeLink = true
+} = Astro.props;
+
+const canonicalUrl = new URL(Astro.url.pathname, 'https://sidwindow.studio').toString();
+const previewImage = new URL(withBase('/images/sidwindow-cover.jpg'), 'https://sidwindow.studio').toString();
 ---
 <!doctype html>
 <html lang="en">
@@ -17,12 +24,25 @@ const { title = 'Artist Archive', description = 'A living archive of artwork, wr
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#eae4d8" />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content={previewImage} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={previewImage} />
+
     <title>{title}</title>
   </head>
   <body>
     <a class="skip-link" href="#main-content">skip to content</a>
     <div class="site-shell">
-      {showHomeLink && <a class="site-home-link mono" href={withBase('/')} aria-label="Return to home">artist archive</a>}
+      {showHomeLink && <a class="site-home-link mono" href={withBase('/')} aria-label="Return to home">sid's studio</a>}
       <div id="main-content">
         <slot />
       </div>

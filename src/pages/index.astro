@@ -4,7 +4,7 @@ import MainNav from '../components/MainNav.astro';
 import { withBase } from '../lib/site';
 ---
 
-<BaseLayout title="Artist Archive" showHomeLink={false}>
+<BaseLayout title="sid's studio" description="looking out the window" showHomeLink={false}>
   <div class="page-wrap">
     <div class="paper-wash featured-art__wash" aria-hidden="true"></div>
     <div class="home-grid">
@@ -13,12 +13,12 @@ import { withBase } from '../lib/site';
         <MainNav />
       </section>
 
-      <section class="featured-art" aria-label="Featured artwork">
+      <section class="featured-art" aria-label="Featured image">
         <div class="featured-art__link">
           <img
             class="featured-art__image"
-            src={withBase('/images/featured-artwork.png')}
-            alt="Featured artwork"
+            src={withBase('/images/sidwindow-cover.jpg')}
+            alt="looking out the window"
             decoding="async"
           />
         </div>
